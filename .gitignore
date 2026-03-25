@@ -48,4 +48,19 @@ Thumbs.db
 
 # Claude Code local settings
 .claude/settings.local.json
-.gemini/ 
+.gemini/
+
+# Secrets and credentials
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*
+*.secrets
+config.local.json
+
+# Cloud provider configs
+.aws/
+.azure/
+.gcp/
