@@ -11,6 +11,8 @@ List physical tables available in a database connection by querying INFORMATION_
 >
 > **Alternative:** If INFORMATION_SCHEMA is not accessible, you can add table reference lists to your project's CLAUDE.md or a dedicated markdown file (e.g., `docs/tables.md`). Include table names, schemas, and descriptions so Claude can help you find tables without needing API access.
 
+> **Architecture Note:** This skill uses a thin wrapper pattern. The implementation is in the project's root `lib/client.py`. The `cdq-list-tables/lib/client.py` file is just a wrapper that redirects to the main client. Always use `python lib/client.py list-tables` or invoke via the skill system.
+
 ## Usage
 
 ```bash
@@ -25,7 +27,7 @@ python lib/client.py list-tables --limit 20
 | Parameter | Required | Default | Description |
 |-----------|----------|---------|-------------|
 | `--schema` | No | Uses DQ_CXN default | Database schema/dataset to list tables from |
-| `--search` | No | None | Filter tables by name substring (case-insensitive) |
+| `--search` | No | None | Filter using SQL LIKE syntax (case-insensitive). Use `d%` for prefix, `%text%` for substring (default) |
 | `--limit` | No | 20 | Maximum number of tables to return (starts small for readability) |
 | `--connection` | No | $DQ_CXN | Datasource connection name |
 
@@ -38,8 +40,11 @@ python lib/client.py list-tables
 # List tables in a specific schema (BigQuery dataset)
 python lib/client.py list-tables --schema samples
 
-# Search for tables containing "account" in name
+# Search for tables containing "account" in name (LIKE %account%)
 python lib/client.py list-tables --search account
+
+# Find tables starting with 'd' (LIKE d%)
+python lib/client.py list-tables --search "d%"
 
 # Get more results (up to 100)
 python lib/client.py list-tables --limit 100
@@ -101,6 +106,7 @@ Returns a JSON array of table names, sorted alphabetically with limit applied.
 - Default limit is 20 for readability - increase with --limit flag
 - Schema must exist and be accessible to the connection user
 - If INFORMATION_SCHEMA queries fail, user may need to check credentials/permissions
+- **Search uses SQL LIKE syntax**: `account` becomes `%account%` (substring), `d%` becomes `%d%` (prefix), `%text` becomes `%text` (suffix)
 
 ## Troubleshooting
 

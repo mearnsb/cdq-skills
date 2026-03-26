@@ -129,7 +129,11 @@ def cmd_list_tables(args):
     sql_parts.append("WHERE table_type = 'BASE TABLE'")
 
     if search:
-        sql_parts.append(f"AND LOWER(table_name) LIKE '%{search.lower()}%'")
+        # If user provides explicit wildcards (%, _), use as-is; otherwise wrap with % for substring match
+        if '%' in search or '_' in search:
+            sql_parts.append(f"AND LOWER(table_name) LIKE '{search.lower()}'")
+        else:
+            sql_parts.append(f"AND LOWER(table_name) LIKE '%{search.lower()}%'")
 
     sql_parts.append("ORDER BY table_name")
     sql_parts.append(f"LIMIT {limit}")

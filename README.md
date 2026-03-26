@@ -277,15 +277,79 @@ python lib/client.py save-alert \
   --email "team@company.com"
 ```
 
+## Platform Differences
+
+These skills work across multiple AI coding assistants, but invocation differs:
+
 ### Claude Code
 
-In Claude Code, invoke skills with `/skill-name`:
+| Feature | Details |
+|---------|---------|
+| Skill path | `.claude/skills/` |
+| Invocation | `/skill-name --args` |
+| Auto-discovery | Yes (reads `.claude/skills/`) |
+| Permissions | Prompts for tool approval |
 
-```
+```bash
+# Claude Code uses slash commands
 /cdq-search-catalog --query ""
 /cdq-get-rules --dataset "MY_DATASET"
 /cdq-run-sql --sql "SELECT COUNT(*) FROM schema.table"
 ```
+
+### Gemini CLI
+
+| Feature | Details |
+|---------|---------|
+| Skill path | `.gemini/skills/` |
+| Invocation | `skill-name --args` (no slash) |
+| Auto-discovery | Yes (reads `.gemini/skills/`) |
+| Permissions | May require explicit approval |
+
+```bash
+# Gemini CLI - no slash prefix
+cdq-search-catalog --query ""
+cdq-get-rules --dataset "MY_DATASET"
+cdq-run-sql --sql "SELECT COUNT(*) FROM schema.table"
+```
+
+### OpenClaw
+
+| Feature | Details |
+|---------|---------|
+| Skill path | `.claw/skills/` or `~/.claw/skills/` |
+| Invocation | `/skill-name` or direct command |
+| Auto-discovery | Yes (skill-compatible format) |
+| Permissions | Configurable |
+
+```bash
+# OpenClaw - similar to Claude Code
+/cdq-search-catalog --query ""
+```
+
+### OpenCode / Other Agents
+
+| Feature | Details |
+|---------|---------|
+| Skill path | Varies by agent |
+| Invocation | Often direct CLI execution |
+| Auto-discovery | May require manual config |
+
+For agents without skill discovery, run skills directly:
+
+```bash
+# Direct execution (works everywhere)
+python lib/client.py search-catalog --query ""
+python lib/client.py get-rules --dataset "MY_DATASET"
+python lib/client.py run-sql --sql "SELECT COUNT(*) FROM schema.table"
+```
+
+### Compatibility Notes
+
+1. **Skill Format**: All skills use the same `SKILL.md` + `lib/client.py` structure - compatible across platforms
+2. **CLI Arguments**: All commands work with direct `python lib/client.py` invocation
+3. **Environment**: All platforms require `.env` with CDQ credentials
+4. **Permissions**: Claude Code prompts per-tool; others may auto-approve or require config
 
 ## Project Structure
 
@@ -294,85 +358,104 @@ cdq-skills/
 ├── .env.example          # Template environment file
 ├── requirements.txt      # Python dependencies
 ├── README.md             # This file
+├── tests/
+│   └── test_skills.py    # Fast skill tests (22 tests, <30s)
 ├── lib/
 │   ├── auth.py           # Auth module (/auth/signin token caching)
 │   └── client.py         # CLI wrapper for all operations
-└── skills/
-    ├── cdq-run-sql.md
-    ├── cdq-get-rules.md
-    ├── cdq-save-rule.md
-    ├── cdq-run-dq-job.md
-    ├── cdq-search-catalog.md
-    ├── cdq-get-jobs.md
-    ├── cdq-get-dataset.md
-    ├── cdq-get-results.md
-    ├── cdq-get-alerts.md
-    ├── cdq-save-alert.md
-    ├── cdq-get-recent-runs.md
-    # Workflows (multi-step)
-    ├── cdq-workflow-explore-dataset.md
-    ├── cdq-workflow-run-complete-job.md
-    ├── cdq-workflow-save-complete-rule.md
-    └── cdq-workflow-suggest-rules.md
+└── .claude/skills/
+    ├── lib/
+    │   └── skill_wrapper.py  # Shared wrapper (consolidated)
+    # Command Skills (13)
+    ├── cdq-test-connection/
+    ├── cdq-search-catalog/
+    ├── cdq-list-tables/
+    ├── cdq-run-sql/
+    ├── cdq-run-dq-job/
+    ├── cdq-get-dataset/
+    ├── cdq-get-rules/
+    ├── cdq-get-results/
+    ├── cdq-get-alerts/
+    ├── cdq-get-jobs/
+    ├── cdq-get-recent-runs/
+    ├── cdq-save-rule/
+    ├── cdq-save-alert/
+    # Workflow Skills (4)
+    ├── cdq-workflow-explore-dataset/
+    ├── cdq-workflow-run-complete-job/
+    ├── cdq-workflow-save-complete-rule/
+    └── cdq-workflow-suggest-rules/
+        └── references/
+            ├── rule-patterns.md
+            └── safety-limits.md
 ```
 
-## Using These Skills in Your Workspace
+### Skill Structure
 
-These skills are designed to work with Claude Code (`.claude/skills/`) and Gemini CLI (`.gemini/skills/`). Here's how to link them:
+Each skill has a consistent structure:
+
+```
+cdq-<name>/
+├── SKILL.md           # Documentation (usage, examples, API endpoint)
+├── lib/
+│   └── client.py      # 6-line wrapper using shared skill_wrapper module
+```
+
+The shared `skill_wrapper.py` consolidates duplicated wrapper logic, reducing each skill's wrapper from ~38 lines to 6 lines.
+
+## Testing
+
+Run the test suite to verify all skills are working:
+
+```bash
+python tests/test_skills.py
+```
+
+Tests cover:
+- Wrapper structure (13 skills)
+- Wrapper imports (spot check)
+- Command execution (6 core commands)
+
+## Linking Skills to Your Workspace
 
 ### For Claude Code
 
-Create a symlink to use these skills in your Claude Code workspace:
-
 ```bash
-# From your project directory (or home), create symlink to .claude/skills
-ln -s /path/to/cdq-skills/.claude/skills ~/.claude/skills/cdq-skills
+# Project-specific (recommended)
+mkdir -p .claude/skills
+ln -s /path/to/cdq-skills/.claude/skills/* .claude/skills/
 
-# Or for workspace-specific skills (in your project using Claude Code)
-mkdir -p .claude
-ln -s /path/to/cdq-skills/.claude/skills .claude/skills
+# Or global (all projects)
+ln -s /path/to/cdq-skills/.claude/skills ~/.claude/skills/cdq-skills
 ```
 
-### For Gemini CLI / OpenClaw
-
-Create a symlink to use these skills in your Gemini CLI workspace:
+### For Gemini CLI
 
 ```bash
-# Create .gemini/skills directory in your workspace
+# Project-specific
 mkdir -p .gemini/skills
-
-# Symlink the skills - each skill folder goes directly in .gemini/skills/
 ln -s /path/to/cdq-skills/.claude/skills/cdq-* .gemini/skills/
 
-# Note: The skills are format-compatible with Gemini CLI
-# (same structure as Claude Code skills)
+# Or global
+ln -s /path/to/cdq-skills/.claude/skills/cdq-* ~/.gemini/skills/
 ```
 
-### Verifying the Link
-
-After linking, the skills should be available in your AI assistant:
-
-```
-# In Claude Code, invoke with:
-/cdq-search-catalog --query "customer"
-/cdq-get-rules --dataset "MY_DATASET"
-/cdq-run-sql --sql "SELECT COUNT(*) FROM schema.table"
-
-/# In Gemini CLI, use similarly:
-cdq-search-catalog --query "customer"
-cdq-get-rules --dataset "MY_DATASET"
-```
-
-### Alternative: Copy Directly
-
-If you prefer not to use symlinks, copy the skills folder:
+### For OpenClaw
 
 ```bash
-# For Claude Code - copy each skill folder to .claude/skills/
+# Project-specific
+mkdir -p .claw/skills
+ln -s /path/to/cdq-skills/.claude/skills/cdq-* .claw/skills/
+```
+
+### Alternative: Copy Instead of Link
+
+```bash
+# Claude Code - copy all skills
 cp -r /path/to/cdq-skills/.claude/skills/* ~/.claude/skills/
 
-# For Gemini CLI - copy each skill folder to .gemini/skills/
-cp -r /path/to/cdq-skills/.claude/skills/* ~/.gemini/skills/
+# Gemini CLI - copy command skills only
+cp -r /path/to/cdq-skills/.claude/skills/cdq-* ~/.gemini/skills/
 ```
 
 ---

@@ -40,6 +40,7 @@ def get_config() -> dict:
         "password": get_env_var("DQ_PASSWORD"),
         "iss": get_env_var("DQ_ISS"),
         "cxn": get_env_var("DQ_CXN", required=False) or "BIGQUERY",
+        "schema": get_env_var("DQ_SCHEMA", required=False),
         "verify_ssl": verify_ssl.lower() not in ("false", "0", "no") if verify_ssl else True,
     }
 

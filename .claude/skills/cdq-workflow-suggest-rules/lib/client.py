@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""CDQ Get Alerts - Thin wrapper using shared skill_wrapper module."""
+"""CDQ Workflow: Suggest Rules - Thin wrapper using shared skill_wrapper module.
+
+This workflow skill uses: run-sql, get-rules, save-rule
+"""
 import sys
 from pathlib import Path
 
@@ -9,4 +12,4 @@ sys.path.insert(0, str(skill_lib))
 
 from skill_wrapper import run_skill
 
-run_skill("get-alerts")
+run_skill()
