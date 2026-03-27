@@ -48,6 +48,7 @@ Thumbs.db
 
 # Claude Code local settings
 .claude/settings.local.json
+.claude/projects/
 .gemini/
 
 # Secrets and credentials
@@ -64,3 +65,11 @@ config.local.json
 .aws/
 .azure/
 .gcp/
+
+# Untracked utility scripts (local only)
+generate_sql_join_data.py
+sql_join_queries.sql
+sql_joins_notebook.py
+
+# Local test data (CSV files)
+data/

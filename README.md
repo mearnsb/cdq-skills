@@ -403,6 +403,204 @@ cdq-<name>/
 
 The shared `skill_wrapper.py` consolidates duplicated wrapper logic, reducing each skill's wrapper from ~38 lines to 6 lines.
 
+## Multi-Step Task Workflows
+
+For complex, multi-step CDQ tasks that require planning, validation, and progress tracking, see **[EXAMPLE_PROMPTS.md](./EXAMPLE_PROMPTS.md)**.
+
+This guide provides:
+- **Structured prompt templates** for common workflows (discovery, onboarding, rule generation)
+- **Sequential-thinking integration** for task planning and validation across steps
+- **Best practices** for batch processing, checkpoints, and failure handling
+- **Custom prompt templates** you can adapt for your own tasks
+
+### Full Example: Claims Table Discovery, Onboarding & Rule Generation
+
+**Use case:** Discover all claims-related tables, onboard them as datasets, and generate domain-specific data quality rules with validation checkpoints.
+
+**Prompt:**
+
+```
+Use sequential-thinking to plan, analyze, and validate the following task:
+
+## Task: Automated Claims Table Discovery, Onboarding & Data Quality Rule Generation
+
+### Objective
+Discover all tables containing "claims" in their name, onboard them as datasets with standardized naming,
+generate domain-specific data quality rules, and validate the complete pipeline.
+
+---
+
+### Phase 1: Discovery & Preview
+
+**Step 1.1: Find Claims Tables**
+- Use cdq-run-sql to search database schema
+- SQL: SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME LIKE '%claims%'
+- Use sequential-thinking to document all matching table names
+- Record full schema names (schema.table_name)
+
+**Step 1.2: Preview Each Table**
+- For each discovered table, run: SELECT * FROM <schema.table_name> LIMIT 5
+- Use cdq-run-sql for direct queries (use actual table names)
+- Document schema: column names, data types, nullability
+- Note data characteristics:
+  - Date fields (claim_date, incident_date, submission_date, decision_date)
+  - Amount fields (claim_amount, deductible, coverage_limit)
+  - Status/code fields (status, claim_type, adjuster_id)
+  - Reference fields (policy_id, claimant_id, incident_id)
+
+---
+
+### Phase 2: Dataset Onboarding
+
+**Step 2.1: Prepare Onboarding Configuration** (for each table)
+- Dataset name format: AI_AUTO_ONBOARDED_<table_name>
+- SQL query: SELECT * FROM <schema.table_name> LIMIT 10000
+- Record configuration for validation checkpoint
+- Document expected row count range
+
+**Step 2.2: Execute Onboarding Jobs** (per table)
+- Use cdq-run-dq-job to trigger dataset onboarding
+- Example: dataset="AI_AUTO_ONBOARDED_claims", sql="SELECT * FROM insurance.claims LIMIT 10000"
+- Monitor job execution and capture job IDs
+- Record timestamps and any warnings
+
+**Step 2.3: Validate Onboarding Success**
+- Use cdq-get-results to check each job's completion status
+- Verify:
+  - Job status = COMPLETE (or SUCCESS)
+  - Actual row count is within expected range (not 0, not truncated)
+  - All columns from preview are present in dataset
+- Use sequential-thinking to validate each job milestone
+- Flag any failures for manual remediation
+
+---
+
+### Phase 3: Data Quality Rules Generation
+
+**Step 3.1: Analyze Claims Data for Rule Design** (per table)
+- Review column types, distributions, sample values
+- Identify claims domain specifics:
+  - Date sequences (claim_date should be before submission_date, both before decision_date)
+  - Amount validations (claim_amount > 0, within typical range 100-100000)
+  - Status/type enumerations (OPEN, APPROVED, REJECTED, PENDING, CLOSED, etc.)
+  - Reference integrity (policy_id, claimant_id must exist in related tables or be non-null)
+  - Required fields (claim_id, claimant_id, claim_date are critical)
+- Use sequential-thinking to plan 5-10 domain-specific rules
+
+**Step 3.2: Generate Rule Suggestions** (Domain-specific for claims)
+
+Generate these rule categories:
+
+- **Completeness (NOT NULL)**
+  - claim_id must not be null
+  - claimant_id must not be null
+  - claim_date must not be null
+  - claim_amount must not be null
+  - status must not be null
+
+- **Uniqueness**
+  - claim_id must be unique (no duplicate claims)
+  - claim_no (if exists) must be unique
+
+- **Format & Pattern**
+  - claim_id should match format (e.g., starts with "CLM-" or numeric-only)
+  - claimant_email (if exists) must match email pattern
+  - phone_number (if exists) must be 10 digits for US
+  - policy_id must match known format
+
+- **Range & Logic**
+  - claim_amount must be > 0
+  - claim_amount must be <= policy_coverage_limit
+  - claim_date must not be in future
+  - incident_date must not be in future
+  - adjuster_assigned_date must be >= claim_received_date (if both exist)
+  - submission_date must be >= incident_date
+
+- **Referential Integrity**
+  - claim_type must be in (MEDICAL, AUTO, PROPERTY, LIABILITY, WORKERS_COMP, etc.)
+  - status must be in (OPEN, APPROVED, REJECTED, PENDING, CLOSED, APPEAL, DENIED, etc.)
+  - adjuster_id should reference valid adjuster IDs
+  - policy_id should reference valid policies
+
+- **Consistency**
+  - If status = CLOSED, then close_date must not be null
+  - If status = APPROVED, then approval_date must be <= current_date
+  - claimant_age must be >= 18 (if applicable)
+  - deductible must be <= claim_amount
+
+**Step 3.3: Test Each Rule** (validate syntax & logic)
+- Pick 3-4 rules to test first
+- For each rule, use cdq-run-sql with COUNT to validate:
+  - Example: SELECT COUNT(*) FROM <table_name> WHERE claim_amount <= 0 (should find violations)
+  - Example: SELECT COUNT(*) FROM <table_name> WHERE claim_id IS NULL (should be 0 for valid data)
+  - Use LIMIT 1000 if testing on large datasets
+- Verify rule captures expected violations
+- Adjust SQL as needed for database dialect
+- Record pass/fail results in sequential-thinking
+
+**Step 3.4: Save Rules** (per table)
+- Use cdq-save-rule to persist each validated rule
+- Associate rule with dataset: AI_AUTO_ONBOARDED_<table_name>
+- For each rule provide:
+  - Rule name (descriptive, e.g., "Claim Amount Must Be Positive")
+  - Rule description (business logic, e.g., "Claim amounts must be greater than zero")
+  - SQL condition (the WHERE clause that identifies failures)
+- Document all 5-10 rules created per table
+
+---
+
+### Phase 4: Completion & Validation
+
+**Step 4.1: Generate Summary Report**
+- Total claims tables discovered: ___
+- Tables successfully onboarded: ___
+- Total rules created and saved: ___
+- Failures or manual review needed: ___
+- Average rules per table: ___ (target: 5-10)
+
+**Step 4.2: Final Validation Checkpoint**
+- Use sequential-thinking to confirm:
+  - ✅ All discovered tables appear in onboarded datasets
+  - ✅ All onboarding jobs completed successfully
+  - ✅ All rules tested and validated
+  - ✅ Rule count per table is 5-10 (adjust if needed)
+  - ✅ All rules saved and associated with correct datasets
+- Cross-check discovered tables vs. onboarded datasets (count must match)
+- Verify rule count per table (should be consistent across similar tables)
+- Flag any gaps for remediation
+
+---
+
+## Execution Guidelines
+
+1. **Use sequential-thinking BETWEEN major phases** to validate progress
+2. **Use cdq-* skills** for all Collibra operations:
+   - Discovery: cdq-run-sql, cdq-list-tables
+   - Onboarding: cdq-run-dq-job (with dataset="AI_AUTO_ONBOARDED_*", LIMIT 10000)
+   - Rules: cdq-save-rule, cdq-run-sql (for testing)
+   - Validation: cdq-get-results, cdq-get-rules
+3. **Track metrics throughout**: tables found → onboarded → rules created
+4. **Test before saving**: Always validate SQL with COUNT queries
+5. **Document failures**: Use sequential-thinking to note any tables/rules that fail
+6. **Atomic operations**: Complete each table fully before moving to next
+
+---
+
+## Success Criteria
+
+✅ All "claims" tables discovered and documented
+✅ Each table onboarded with AI_AUTO_ONBOARDED_<table_name> naming
+✅ Onboarding jobs validated as complete (status, row count, columns)
+✅ 5-10 domain-specific rules per claims table
+✅ All rules tested and saved
+✅ Complete audit trail via sequential-thinking checkpoints
+✅ Summary report showing metrics (tables, rules, success rate)
+```
+
+**See [EXAMPLE_PROMPTS.md](./EXAMPLE_PROMPTS.md)** for additional examples (employees, batch processing patterns, and custom prompt templates).
+
+---
+
 ## Testing
 
 Run the test suite to verify all skills are working:
