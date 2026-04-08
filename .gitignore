@@ -49,8 +49,7 @@ Thumbs.db
 # Claude Code and Gemini CLI local settings
 .claude/settings.local.json
 .claude/projects/
-.gemini/settings.local.json
-.gemini/projects/
+.gemini/
 
 # Secrets and credentials
 *.pem
@@ -77,4 +76,9 @@ data/
 
 # Archived skills (kept for reference, not active)
 .claude/skills/archive/
+
+# Backup and temporary report files
 .env.backup
+GITHUB_READINESS.md
+GITHUB_READINESS_REPORT.md
+GITHUB_PUSH_READY.txt
