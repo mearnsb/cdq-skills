@@ -95,15 +95,12 @@ AskUserQuestion:
       (only if DQ_SCHEMA exists)
     - label: "samples"
       description: "Demo/sample schema"
-    - label: "Fetch from catalog"
-      description: "Get fresh list of available schemas"
     - label: "Type something else"
-      description: "Enter a custom schema name"
+      description: "Enter a custom schema name (you can type directly)"
 ```
 
 **1.3** Handle the answer:
-- If "Fetch from catalog" → use `cdq-search-catalog` to find datasets, extract unique schemas, show as numbered options
-- If "Type something else" → ask for custom schema text input
+- If "Type something else" → user provides custom schema name
 - Otherwise → store selected schema, proceed to Phase 2
 
 ### Phase 2: Table Selection
@@ -118,16 +115,12 @@ AskUserQuestion:
   options:
     - label: "customers (Recommended)"
       description: "Common table: customers"
-    - label: "claims"
-      description: "Common table: claims"
-    - label: "nyse"
-      description: "Common table: nyse"
     - label: "Search by pattern"
       description: "Search tables by name pattern (e.g., %cust%)"
     - label: "Browse all tables"
       description: "List all tables in schema"
     - label: "Type something else"
-      description: "Enter a custom table name"
+      description: "Enter a custom table name (you can type directly)"
 ```
 
 **2.2** Handle the answer:
@@ -224,8 +217,8 @@ AskUserQuestion:
   options:
     - label: "{table}_dq (Recommended)"
       description: "Use suggested name"
-    - label: "Type custom name"
-      description: "Enter a different dataset name"
+    - label: "Type something else"
+      description: "Enter a different dataset name (you can type directly)"
 ```
 
 **2.3** Present sample size (batch 2 of 2):
@@ -521,16 +514,13 @@ Use these exact patterns for consistency:
 **Schema:**
 - "{schema} (Recommended)"
 - "samples"
-- "Fetch from catalog"
-- "Type something else"
+- "Type something else" (for custom schema)
 
 **Table:**
 - "customers (Recommended)"
-- "claims"
-- "nyse"
 - "Search by pattern"
 - "Browse all tables"
-- "Type something else"
+- "Type something else" (for custom table)
 
 **Next Steps:**
 - "{action} (Recommended)"
