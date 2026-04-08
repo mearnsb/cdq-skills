@@ -76,3 +76,4 @@ data/
 
 # Archived skills (kept for reference, not active)
 .claude/skills/archive/
+.env.backup
