@@ -46,10 +46,11 @@ Thumbs.db
 # Logs
 *.log
 
-# Claude Code local settings
+# Claude Code and Gemini CLI local settings
 .claude/settings.local.json
 .claude/projects/
-.gemini/
+.gemini/settings.local.json
+.gemini/projects/
 
 # Secrets and credentials
 *.pem
