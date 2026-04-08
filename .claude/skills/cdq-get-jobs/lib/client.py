@@ -9,4 +9,5 @@ sys.path.insert(0, str(skill_lib))
 
 from skill_wrapper import run_skill
 
+# Command is hardcoded - ignore any extra args to avoid argparse errors
 run_skill("get-jobs")

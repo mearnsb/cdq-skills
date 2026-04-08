@@ -328,6 +328,22 @@ def cmd_get_recent_runs(args):
     _print_json(result)
 
 
+def cmd_auto_cdq(args):
+    """Run the auto-cdq guided workflow."""
+    # This will invoke the auto-cdq skill
+    print("Launching Auto-CDQ guided workflow...")
+    print("Use /auto-cdq directly for the interactive experience.")
+    # In a real implementation, this would launch the interactive workflow
+    # For now, we'll just point to the skill
+    print("Available workflows:")
+    print("  /auto-cdq discovery  - Discover and preview tables")
+    print("  /auto-cdq onboarding - Register datasets with validation")
+    print("  /auto-cdq rules      - Generate and save quality rules")
+    print("  /auto-cdq monitor    - Monitor job performance")
+    print("  /auto-cdq alerts     - Configure quality alerts")
+    return 0
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Collibra Data Quality API Client",
@@ -413,6 +429,11 @@ def main():
     p_save_alert.add_argument("--email", required=True, help="Email address")
     p_save_alert.add_argument("--message", help="Alert message")
     p_save_alert.set_defaults(func=cmd_save_alert)
+
+    # auto-cdq
+    p_auto_cdq = subparsers.add_parser("auto-cdq", help="Guided CDQ workflow assistant")
+    p_auto_cdq.add_argument("workflow", nargs="?", help="Specific workflow to run (discovery, onboarding, rules, monitor, alerts)")
+    p_auto_cdq.set_defaults(func=cmd_auto_cdq)
 
     # get-recent-runs
     p_recent = subparsers.add_parser("get-recent-runs", help="Get recent DQ runs")

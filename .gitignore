@@ -73,3 +73,6 @@ sql_joins_notebook.py
 
 # Local test data (CSV files)
 data/
+
+# Archived skills (kept for reference, not active)
+.claude/skills/archive/

@@ -52,8 +52,9 @@ def run_skill(command_name=None):
         from client import main
 
         # Override argv if command specified
+        # When command is hardcoded, skip extra args to avoid "unrecognized arguments" errors
         if command_name:
-            sys.argv = [str(project_root / "lib" / "client.py"), command_name] + sys.argv[1:]
+            sys.argv = [str(project_root / "lib" / "client.py"), command_name]
         else:
             sys.argv[0] = str(project_root / "lib" / "client.py")
 
