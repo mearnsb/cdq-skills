@@ -1,7 +1,15 @@
 ---
 name: auto-cdq
-description: "CDQ workflow wizard. Use: /auto-cdq [discovery|onboarding|rules] [--schema SCHEMA] [--table TABLE] [--dataset DATASET] [--limit N]"
-run: python3 lib/client.py
+description: Enhanced guided CDQ workflow assistant with autoresearch-style wizard experience featuring numbered menus, dynamic suggestions, and multi-phase workflows.
+commands:
+  - name: auto-cdq
+    description: Show workflow selection menu (Discovery, Onboarding, Rules)
+  - name: auto-cdq:discovery
+    description: Jump straight to Discovery Workflow - find and preview tables
+  - name: auto-cdq:onboarding
+    description: Jump straight to Onboarding Workflow - register dataset and run DQ job
+  - name: auto-cdq:rules
+    description: Jump straight to Rules Workflow - analyze data and create quality rules
 ---
 
 # Auto-CDQ — Interactive Wizard
