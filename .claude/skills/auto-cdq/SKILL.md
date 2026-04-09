@@ -1,29 +1,37 @@
 ---
 name: auto-cdq
-description: 'Interactive guided CDQ workflow (Discovery → Onboarding → Rules). Combines multi-section progress headers, real skill execution, validation loops, and progressive disclosure. NOT a headless automation tool - use direct Python CLI for non-interactive mode.'
+description: 'Interactive guided CDQ workflow (Discovery → Onboarding → Rules). Hybrid Option 3: Multi-section progress headers + AskUserQuestion + skill execution with graceful non-interactive fallback.'
 interaction: interactive
 mode: user-guided
 references:
-  - see_also: docs/CDQ_SKILL_SEQUENCING_CHECKLIST.md for non-interactive workflows
-  - see_also: docs/INTERACTIVE_VS_NONINTERACTIVE.md for mode distinction
+  - see_also: docs/HYBRID_PROGRESSIVE_DISCLOSURE_PATTERN.md
+  - see_also: .claude/bin/auto-cdq-wizard.py for explicit non-interactive mode
 commands:
   - name: auto-cdq
     description: Show workflow selection menu (Discovery, Onboarding, Rules)
   - name: auto-cdq discovery
-    description: 'Start Discovery Workflow - find and preview tables with multi-section progress tracking'
+    description: 'Discovery Workflow - Find and preview tables with schema selection, table discovery, data preview, and confirmation. Multi-section headers + skill execution.'
   - name: auto-cdq onboarding
-    description: 'Start Onboarding Workflow - register dataset with config validation and guided execution'
+    description: 'Onboarding Workflow - Register dataset and run DQ job with config validation (coming soon)'
   - name: auto-cdq rules
-    description: 'Start Rules Workflow - analyze data, create quality rules with per-rule testing'
+    description: 'Rules Workflow - Analyze data and create quality rules with per-rule testing (coming soon)'
 ---
 
-# Auto-CDQ — Interactive Guided Workflows
+# Auto-CDQ — Hybrid Progressive Disclosure Workflows
 
-**INTERACTIVE ONLY** - This skill provides guided, exploratory workflows with multi-section progress headers, skill execution between questions, and validation loops.
+**Hybrid Option 3 Implementation**: Multi-section progress headers + AskUserQuestion + skill execution with graceful non-interactive fallback.
 
-For headless/automation/non-interactive workflows, use direct Python invocation:
+## Quick Start
+
 ```bash
+# Interactive (Claude Code or terminal with stdin)
+/auto-cdq discovery
+
+# Non-interactive (explicit headless mode)
 python3 .claude/bin/auto-cdq-wizard.py discovery --schema samples --table accounts
+
+# Orchestrator directly (internal implementation)
+python3 .claude/bin/auto-cdq-orchestrator.py discovery
 ```
 
 ## Pattern: Hybrid Progressive Disclosure
