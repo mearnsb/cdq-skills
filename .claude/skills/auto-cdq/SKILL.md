@@ -1,560 +1,222 @@
 ---
 name: auto-cdq
-description: Enhanced guided CDQ workflow assistant with autoresearch-style wizard experience featuring numbered menus, dynamic suggestions, and multi-phase workflows.
-commands:
-  - name: auto-cdq
-    description: Show workflow selection menu (Discovery, Onboarding, Rules)
-  - name: auto-cdq:discovery
-    description: Jump straight to Discovery Workflow - find and preview tables
-  - name: auto-cdq:onboarding
-    description: Jump straight to Onboarding Workflow - register dataset and run DQ job
-  - name: auto-cdq:rules
-    description: Jump straight to Rules Workflow - analyze data and create quality rules
+description: Enhanced guided CDQ workflow assistant with wizard experience for Discovery (find tables), Onboarding (register & run jobs), and Rules (create quality rules).
+arguments:
+  - name: workflow
+    description: "Workflow to run (optional): discovery, onboarding, or rules. Omit to show menu."
+    values:
+      - "discovery – Find and preview tables with guided search"
+      - "onboarding – Register dataset and run a DQ job"
+      - "rules – Analyze data and create quality rules"
+  - name: --schema
+    description: "Schema name (optional). Default: 'samples'"
+    example: "samples"
+  - name: --table
+    description: "Table name to work with (optional)"
+    example: "accounts"
+  - name: --dataset
+    description: "Dataset logical name (optional). Default: {table}_dq"
+    example: "customers_dq"
+  - name: --limit
+    description: "Row limit for preview or job (optional). Default: 5 (preview) or 10000 (job)"
+    example: "1000"
 ---
 
 # Auto-CDQ — Interactive Wizard
 
-An interactive, autoresearch-style wizard for Collibra DQ workflows. When invoked, you become a guided assistant that walks users through schema selection, table discovery, onboarding, and rule creation.
+An interactive, autoresearch-style wizard for Collibra DQ workflows. Orchestrates existing CDQ skills to guide users through schema selection, table discovery, onboarding, and rule creation.
 
-## Core Behavior
+## Overview
 
-### Always Use AskUserQuestion
-Present EVERY user choice as numbered options using the AskUserQuestion tool:
-- Use `multiSelect: false` for single choices, `true` for multiple selections
-- Include 2-6 options per question
-- Mark recommended options with "(Recommended)" in the label
-- Always include escape hatches like "Type something else" or "Skip"
+The auto-cdq wizard is a **standalone orchestrator** that:
 
-### Batch Questions
-Group related questions into single AskUserQuestion calls (max 4 per batch).
+- Runs the `.claude/bin/auto-cdq-wizard.py` script
+- Guides users through three main workflows: Discovery, Onboarding, Rules
+- Calls existing CDQ skills internally (via `/cdq-run-sql`, `/cdq-run-dq-job`, etc.)
+- Stores progress in `.auto-cdq-state.json` for backward navigation
+- **Leaves all public-repo CDQ skills completely unchanged**
 
-### Use Backend for Data
-Use the existing CDQ skills to fetch real data:
-- `cdq-search-catalog` — Search for datasets
-- `cdq-list-tables --schema X --search Y --limit N` — List tables in a schema
-- `cdq-run-sql --sql "SELECT * FROM schema.table LIMIT 5"` — Preview data
-- `cdq-run-dq-job --dataset X --sql Y` — Run onboarding job
-- `cdq-save-rule --dataset X --name Y --sql Z` — Save a rule
-- `cdq-get-rules --dataset X` — Get existing rules
-- `cdq-workflow-suggest-rules` — Analyze columns for rule suggestions
-- `cdq-test-connection` — Test API connectivity
-
-### Track State
-Store progress in `.auto-cdq-state.json` between turns.
+All individual CDQ skills remain available as standalone commands:
+- `/cdq-search-catalog` — Search datasets
+- `/cdq-list-tables` — List tables
+- `/cdq-run-sql` — Execute SQL queries
+- `/cdq-run-dq-job` — Run DQ jobs
+- `/cdq-save-rule` — Create rules
+- ...and 10+ more
 
 ---
 
-## Entry Point
+## Usage
 
-When `/auto-cdq` is invoked:
-
-**Step 1:** Check if user specified a workflow in the command:
-- `/auto-cdq discovery` → jump to Discovery Workflow
-- `/auto-cdq onboarding` → jump to Onboarding Workflow
-- `/auto-cdq rules` → jump to Rules Workflow
-- No argument → present workflow selection menu
-
-**Step 2:** If no workflow specified, present:
-
-```
-AskUserQuestion:
-  question: "What would you like to do?"
-  header: "Workflow"
-  multiSelect: false
-  options:
-    - label: "Discovery (Recommended)"
-      description: "Find and preview tables with guided search"
-    - label: "Onboarding"
-      description: "Register a dataset and run a DQ job"
-    - label: "Rules"
-      description: "Analyze data and create quality rules"
-    - label: "Exit"
-      description: "Finish the session"
-```
-
-**Step 3:** Route to the selected workflow.
-
----
-
-## Discovery Workflow
-
-### Phase 1: Schema Selection
-
-**1.1** Get the configured schema from the project's `.env` file (DQ_SCHEMA).
-
-**1.2** Present schema menu:
-
-```
-AskUserQuestion:
-  question: "Which schema should we search in?"
-  header: "Schema"
-  multiSelect: false
-  options:
-    - label: "{DQ_SCHEMA} (Recommended)"
-      description: "Use the schema from your .env configuration"
-      (only if DQ_SCHEMA exists)
-    - label: "samples"
-      description: "Demo/sample schema"
-    - label: "Type something else"
-      description: "Enter a custom schema name (you can type directly)"
-```
-
-**1.3** Handle the answer:
-- If "Type something else" → user provides custom schema name
-- Otherwise → store selected schema, proceed to Phase 2
-
-### Phase 2: Table Selection
-
-**2.1** Present table menu:
-
-```
-AskUserQuestion:
-  question: "Which table would you like to work with?"
-  header: "Table"
-  multiSelect: false
-  options:
-    - label: "customers (Recommended)"
-      description: "Common table: customers"
-    - label: "Search by pattern"
-      description: "Search tables by name pattern (e.g., %cust%)"
-    - label: "Browse all tables"
-      description: "List all tables in schema"
-    - label: "Type something else"
-      description: "Enter a custom table name (you can type directly)"
-```
-
-**2.2** Handle the answer:
-
-If specific table (customers/claims/nyse):
-- Store table name
-- Proceed to Phase 3 (Preview)
-
-If "Search by pattern":
-- Ask: "Enter a pattern to search for (SQL LIKE syntax):"
-- Then run: `cdq-list-tables --schema {schema} --search {pattern} --limit 20`
-- Show results as numbered options
-
-If "Browse all tables":
-- Run: `cdq-list-tables --schema {schema} --limit 20`
-- Show results as numbered options
-
-If "Type something else":
-- Ask for custom table name
-- Proceed to Phase 3
-
-### Phase 3: Preview
-
-**3.1** Run preview:
+### Show workflow menu (interactive)
 ```bash
-cdq-run-sql --sql "SELECT * FROM `{schema}.{table}` LIMIT 5"
+/auto-cdq
+# Displays numbered menu for Discovery, Onboarding, Rules, or Exit
 ```
 
-**3.2** Extract and display:
-- Column names (from result headers)
-- Row count returned
-- Sample values (first 3 rows)
-
-**3.3** Present confirmation menu:
-
-```
-AskUserQuestion:
-  question: "Preview of `{schema}.{table}` (5 rows shown):\n\nColumns: {col1}, {col2}, ...\n\nWhat would you like to do next?"
-  header: "Next Step"
-  multiSelect: false
-  options:
-    - label: "Use this table (Recommended)"
-      description: "Proceed with this table"
-    - label: "Preview more rows"
-      description: "Show additional sample data (LIMIT 20)"
-    - label: "Choose different table"
-      description: "Go back to table selection"
-    - label: "Exit"
-      description: "Finish the session"
-```
-
-**3.4** Handle answer:
-- "Use this table" → proceed to Post-Discovery Menu
-- "Preview more rows" → re-run preview with LIMIT 20, show results
-- "Choose different table" → return to Phase 2
-- "Exit" → clear state, end session
-
-### Phase 4: Post-Discovery Menu
-
-```
-AskUserQuestion:
-  question: "Found {count} tables in `{schema}`.\n\nTop matches: {table1}, {table2}...\n\nWhat would you like to do next?"
-  header: "Next Step"
-  multiSelect: false
-  options:
-    - label: "Preview a table (Recommended)"
-      description: "View sample data from a table"
-    - label: "Start onboarding"
-      description: "Register a dataset"
-    - label: "Refine search"
-      description: "Try a different search pattern"
-    - label: "Exit"
-      description: "Finish the session"
-```
-
----
-
-## Onboarding Workflow
-
-### Phase 1: Table Selection
-Same as Discovery Phases 1-3. User must select a table first.
-
-### Phase 2: Dataset Configuration
-
-**2.1** Suggest dataset name: `{table}_dq`
-
-**2.2** Present configuration (batch 1 of 2):
-
-```
-AskUserQuestion:
-  question: "Configure onboarding for `{schema}.{table}`:"
-  header: "Dataset Name"
-  multiSelect: false
-  options:
-    - label: "{table}_dq (Recommended)"
-      description: "Use suggested name"
-    - label: "Type something else"
-      description: "Enter a different dataset name (you can type directly)"
-```
-
-**2.3** Present sample size (batch 2 of 2):
-
-```
-AskUserQuestion:
-  question: "How many rows should we onboard?"
-  header: "Sample Size"
-  multiSelect: false
-  options:
-    - label: "10,000 rows (Recommended)"
-      description: "Conservative sample - fast and safe"
-    - label: "50,000 rows"
-      description: "Medium sample - good balance"
-    - label: "100,000 rows"
-      description: "Large sample - more comprehensive"
-    - label: "Custom limit"
-      description: "Enter a specific row count"
-```
-
-### Phase 3: Validation
-
-**3.1** Build test query:
-```sql
-SELECT * FROM `{schema}.{table}` LIMIT 10
-```
-
-**3.2** Run validation:
+### Discovery Workflow
 ```bash
-cdq-run-sql --sql "SELECT * FROM `{schema}.{table}` LIMIT 10"
+/auto-cdq discovery                                          # Interactive discovery
+/auto-cdq discovery --schema samples                         # Specify schema
+/auto-cdq discovery --schema samples --table accounts        # Pre-select table
+/auto-cdq discovery --schema samples --table accounts --limit 10  # Set preview rows
 ```
 
-**3.3** If validation fails:
-- Show error message
-- Offer to: modify table name, choose different table, or exit
-
-**3.4** If validation passes:
-- Show row count that will be onboarded
-- Ask for final confirmation:
-
-```
-AskUserQuestion:
-  question: "Validation passed. This will onboard {count} rows to dataset '{dataset}'.\n\nProceed with onboarding?"
-  header: "Confirm"
-  multiSelect: false
-  options:
-    - label: "Yes, proceed (Recommended)"
-      description: "Start the onboarding job"
-    - label: "Modify settings"
-      description: "Change dataset name or limit"
-    - label: "Cancel"
-      description: "Return to menu"
-```
-
-### Phase 4: Execution
-
-**4.1** Run onboarding job:
+### Onboarding Workflow
 ```bash
-cdq-run-dq-job --dataset {dataset} --sql "SELECT * FROM `{schema}.{table}` LIMIT {limit}"
+/auto-cdq onboarding                                          # Interactive onboarding
+/auto-cdq onboarding --schema samples --table accounts        # Specify data source
+/auto-cdq onboarding --dataset customers_dq                  # Set logical dataset name
+/auto-cdq onboarding --schema samples --table accounts --dataset accounts_dq --limit 50000  # Full config
 ```
 
-**4.2** Show result:
-- Dataset name
-- Job status
-- Run ID
-
-### Phase 5: Post-Onboarding
-
-```
-AskUserQuestion:
-  question: "Onboarding job started for dataset '{dataset}'.\n\nWhat would you like to do next?"
-  header: "Next Step"
-  multiSelect: false
-  options:
-    - label: "Check job status (Recommended)"
-      description: "Monitor the onboarding job"
-    - label: "Create rules"
-      description: "Go to rules wizard"
-    - label: "Exit"
-      description: "Finish the session"
-```
-
----
-
-## Rules Workflow
-
-### Phase 1: Table Selection
-Same as Discovery Phases 1-3. User must select a table first.
-
-### Phase 2: Column Analysis
-
-**2.1** Run analysis:
+### Rules Workflow
 ```bash
-cdq-workflow-suggest-rules
-```
-(This skill will analyze the selected table's columns and suggest rules)
-
-**2.2** Parse suggestions from result. Each suggestion contains:
-- `column`: column name
-- `type`: completeness, uniqueness, validity, range
-- `priority`: high, medium, low
-- `description`: human-readable description
-- `suggested_rule`: SQL for the rule
-
-### Phase 3: Rule Selection
-
-**3.1** Group by priority:
-- HIGH priority first
-- MEDIUM priority second
-- LOW priority last
-
-**3.2** Present selection menu:
-
-```
-AskUserQuestion:
-  question: "Found {count} potential data quality rules.\n\nHigh priority: {high_count} | Medium priority: {med_count}\n\nSelect rules to create:"
-  header: "Rules"
-  multiSelect: true
-  options:
-    - label: "[HIGH] {type}: {column} (Recommended)"
-      description: "{description}"
-      (for each high-priority suggestion, max 5)
-    - label: "[MED] {type}: {column}"
-      description: "{description}"
-      (for each medium-priority suggestion, max 5)
-    - label: "Select all suggestions"
-      description: "Create all recommended rules"
-    - label: "Create custom rule"
-      description: "Write your own SQL-based rule"
-    - label: "Skip rules"
-      description: "Exit without creating rules"
-```
-
-### Phase 4: Rule Testing
-
-For EACH selected rule:
-
-**4.1** Show rule details:
-```
-Rule: {rule_name}
-Type: {rule_type}
-SQL: {rule_sql}
-```
-
-**4.2** Test the SQL by running:
-```bash
-cdq-run-sql --sql "{rule_sql}"
-```
-
-**4.3** Show flagged row count.
-
-**4.4** Ask for confirmation:
-
-```
-AskUserQuestion:
-  question: "Rule: {rule_name}\n\nSQL: {rule_sql}\n\nWould flag {count} rows if applied.\n\nWhat would you like to do?"
-  header: "Confirm Rule"
-  multiSelect: false
-  options:
-    - label: "Save this rule (Recommended)"
-      description: "Add to dataset"
-    - label: "Modify rule"
-      description: "Adjust the SQL"
-    - label: "Skip this rule"
-      description: "Don't create this rule"
-```
-
-### Phase 5: Save Rules
-
-**5.1** For each approved rule:
-```bash
-cdq-save-rule --dataset {dataset} --name "{rule_name}" --sql "{rule_sql}"
-```
-
-**5.2** Show summary:
-```
-Saved {N} rules to dataset '{dataset}':
-  1. {rule_name_1} - {type}
-  2. {rule_name_2} - {type}
-  ...
-```
-
-### Phase 6: Post-Rules
-
-```
-AskUserQuestion:
-  question: "Created {N} rules for '{dataset}'.\n\nWhat would you like to do next?"
-  header: "Next Step"
-  multiSelect: false
-  options:
-    - label: "Run DQ job (Recommended)"
-      description: "Execute job with new rules"
-    - label: "Create more rules"
-      description: "Return to rule selection"
-    - label: "Exit"
-      description: "Finish the session"
+/auto-cdq rules                                               # Interactive rule creation
+/auto-cdq rules --dataset customers_dq                       # Work with existing dataset
 ```
 
 ---
 
-## Error Handling
+## Workflows
 
-### Connection Failure
-If any backend command fails with connection error:
+### 1. Discovery Workflow
+**Find and preview tables** with guided search.
 
-1. Run `cdq-test-connection`
+Flow:
+1. Select schema (or use configured default)
+2. Search or browse tables
+3. Preview data (5 rows)
+4. Choose next step (Onboarding, Rules, or continue discovery)
 
-2. Show error clearly:
-```
-Connection test failed.
-Error: {error_message}
+### 2. Onboarding Workflow
+**Register a dataset** and run a DQ job.
 
-Remediation:
-1. Check your .env file for DQ_URL, DQ_USER, DQ_PASSWORD
-2. Verify network connectivity to CDQ server
-```
+Flow:
+1. Specify dataset name (suggested: `{table}_dq`)
+2. Choose data size limit (1K, 10K, 50K, 100K, or full)
+3. Test connection to CDQ
+4. Run DQ job
+5. Check results
 
-3. Offer to: retry, continue with cached data, or exit
+### 3. Rules Workflow
+**Analyze data and create data quality rules**.
 
-### No Results Found
-If list-tables returns 0 tables:
-
-```
-AskUserQuestion:
-  question: "Found 0 tables in `{schema}` matching \"{search}\".\n\nWhat would you like to do?"
-  header: "Next Step"
-  multiSelect: false
-  options:
-    - label: "Refine search (Recommended)"
-      description: "Try a different search pattern"
-    - label: "Choose different schema"
-      description: "Select another schema"
-    - label: "Exit"
-      description: "Finish the session"
-```
-
-### Invalid SQL
-If run-sql fails:
-
-```
-AskUserQuestion:
-  question: "SQL validation failed.\n\nQuery: {sql}\nError: {error_message}\n\nWhat would you like to do?"
-  header: "Next Step"
-  multiSelect: false
-  options:
-    - label: "Modify query"
-      description: "Adjust the SQL"
-    - label: "Use different table"
-      description: "Select another table"
-    - label: "Exit"
-      description: "Finish the session"
-```
+Flow:
+1. Analyze columns for patterns (powered by `/cdq-workflow-suggest-rules`)
+2. Review and select suggested rules (HIGH/MEDIUM/LOW priority)
+3. Test rules against data
+4. Save validated rules to dataset
 
 ---
 
-## State File Format
+## Architecture
 
-Store state in `.auto-cdq-state.json`:
+### State Management
+Progress is saved to `.auto-cdq-state.json`:
+- Persists across turns
+- Enables backward navigation (user can modify earlier choices)
+- Cleared on exit or error
 
-```json
-{
-  "phase": "discovery_schema",
-  "workflow": "discovery",
-  "schema": "DQ_SCHEMA",
-  "table": null,
-  "dataset": null,
-  "limit": 10000,
-  "selected_rules": [],
-  "available_schemas": ["DQ_SCHEMA", "samples"],
-  "preview_data": null,
-  "analysis_result": null
-}
+### Backend Integration
+The wizard delegates real work to existing CDQ skills:
+
+| Operation | Skill Called |
+|-----------|--------------|
+| Test connection | `/cdq-test-connection` |
+| List tables | `/cdq-list-tables` |
+| Preview data | `/cdq-run-sql` |
+| Run DQ job | `/cdq-run-dq-job` |
+| Get results | `/cdq-get-results` |
+| Suggest rules | `/cdq-workflow-suggest-rules` |
+| Save rule | `/cdq-save-rule` |
+
+All skills run unchanged, unaware they're being called by the wizard.
+
+### Implementation
+- **Wizard script**: `.claude/bin/auto-cdq-wizard.py`
+- **Configuration**: Reads from project environment (DQ_URL, DQ_USER, etc.)
+- **Logging**: Uses `.auto-cdq-state.json` for state tracking
+
+---
+
+## User Experience
+
+The wizard presents numbered menus for each choice:
+
+```
+AUTO-CDQ WIZARD: Workflow Selection
+==================================================================
+
+1) Discovery (Recommended)     — Find and preview tables with guided search
+2) Onboarding                   — Register a dataset and run a DQ job
+3) Rules                        — Analyze data and create quality rules
+4) Exit                         — Finish the session
+
+Choose an option (1-4):
+→ _
 ```
 
-**State lifecycle:**
-- Load at start of each turn
-- Update after each user answer
-- Clear on "Exit" or error
-- Persist across session restarts
+After selecting a workflow, you're guided through each phase with clear prompts and options.
 
 ---
 
-## Quick Reference: Option Labels
+## Key Features
 
-Use these exact patterns for consistency:
+✅ **Multi-phase workflows** — Discovery → Onboarding → Rules (or pick any starting point)
 
-**Workflow:**
-- "Discovery (Recommended)"
-- "Onboarding"
-- "Rules"
-- "Exit"
+✅ **Backward navigation** — Modify earlier choices without restarting
 
-**Schema:**
-- "{schema} (Recommended)"
-- "samples"
-- "Type something else" (for custom schema)
+✅ **State persistence** — Progress saved, survives restarts
 
-**Table:**
-- "customers (Recommended)"
-- "Search by pattern"
-- "Browse all tables"
-- "Type something else" (for custom table)
+✅ **Real backend calls** — Uses existing CDQ skills, not mock data
 
-**Next Steps:**
-- "{action} (Recommended)"
-- "Refine search"
-- "Choose different {type}"
-- "Exit"
+✅ **Safe defaults** — Recommended options, clear descriptions
 
-**Rules:**
-- "[HIGH] {Type}: {column} (Recommended)"
-- "[MED] {Type}: {column}"
-- "[LOW] {Type}: {column}"
-- "Select all suggestions"
-- "Create custom rule"
-- "Skip rules"
+✅ **Error handling** — Connection failures lead to `/cdq-test-connection`, not dead ends
+
+✅ **No Python changes to existing skills** — All public-repo skills stay unchanged
 
 ---
 
-## Testing Checklist
+## Tips
 
-Before considering this skill complete, verify:
+- **Show menu?** Type `/auto-cdq` with no arguments to see interactive workflow selection.
+- **Quick discovery?** Use `/auto-cdq discovery --schema samples --table accounts --limit 10`
+- **Pre-configure onboarding?** Use `/auto-cdq onboarding --schema samples --table accounts --dataset accounts_dq`
+- **Work with existing dataset?** Use `/auto-cdq rules --dataset mydata_dq` to create rules
+- **Use individual skills?** All 15+ CDQ skills work standalone: `/cdq-search-catalog`, `/cdq-run-sql`, etc.
 
-- [ ] Workflow menu appears first
-- [ ] Schema menu shows configured schema as recommended
-- [ ] "Fetch from catalog" returns actual schemas
-- [ ] Table menu shows common suggestions
-- [ ] "Search by pattern" filters tables correctly
-- [ ] Preview shows rows with column names
-- [ ] Post-discovery menu offers onboarding
-- [ ] Onboarding suggests correct dataset name
-- [ ] Sample size options appear
-- [ ] SQL validation runs before job
-- [ ] Rules analysis detects NULL patterns
-- [ ] High priority rules shown first
-- [ ] Rule SQL test shows flagged count
-- [ ] State persists across answers
-- [ ] State clears on Exit
-- [ ] Error handling shows helpful messages
+---
+
+## Troubleshooting
+
+### Connection failures
+If the wizard can't reach CDQ:
+1. The wizard will run `/cdq-test-connection`
+2. Check your `.env` file for `DQ_URL`, `DQ_USER`, `DQ_PASSWORD`
+3. Verify network connectivity to the CDQ server
+
+### No tables found
+If a schema search returns 0 results:
+1. Try a different schema
+2. Use `/cdq-list-tables --schema <name>` directly to debug
+3. Verify the table exists in your datasource
+
+### SQL errors
+If a preview or job fails:
+1. The error message will show the problematic query
+2. Try `/cdq-run-sql --sql "SELECT * FROM ..."` directly to test
+3. Modify your schema/table selection and retry
+
+---
+
+## See Also
+
+- `/cdq-search-catalog` — Search for existing datasets
+- `/cdq-list-tables` — List tables in a schema
+- `/cdq-run-sql` — Execute SQL queries directly
+- `/cdq-run-dq-job` — Register dataset and run job
+- `/cdq-save-rule` — Create data quality rules
+
+All skills are available standalone and unchanged.
