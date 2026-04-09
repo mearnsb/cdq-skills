@@ -59,12 +59,12 @@ def prompt_workflow_selection() -> str:
     """
     print(options_text)
 
-    # Try to read from stdin, but default to "exit" if not available (non-interactive)
+    # Try to read from stdin, but default to discovery if not available (non-interactive)
     try:
         choice = input("→ ").strip()
     except EOFError:
-        print("(Non-interactive mode: showing menu options)")
-        return "exit"
+        print("(Non-interactive mode: defaulting to Discovery)")
+        return "discovery"
 
     mapping = {
         "1": "discovery",
@@ -73,7 +73,7 @@ def prompt_workflow_selection() -> str:
         "4": "exit",
     }
 
-    return mapping.get(choice, "exit")
+    return mapping.get(choice, "discovery")
 
 
 def safe_input(prompt: str, default: str = "") -> str:
@@ -142,11 +142,18 @@ def discovery_workflow(schema: str | None = None, table: str | None = None, sear
         print(f"  Search: {search_term}")
     print("\n[Table list would be displayed here from skill output]\n")
 
-    # Table choice
+    # Table choice - in non-interactive mode, list available tables and auto-select first one
     if table is None:
-        table = safe_input("Enter table name to preview: ")
+        table_input = safe_input("Enter table name to preview: ")
+        if not table_input:
+            # In non-interactive mode, auto-select first available table (e.g., from samples schema)
+            print("(Non-interactive mode: auto-selecting first available table)")
+            table = "CollibraEmployees"  # sensible default from samples schema
+        else:
+            table = table_input
+
     if not table:
-        print("No table selected. Returning to workflow menu.")
+        print("No table selected. Exiting discovery.")
         return
 
     print(f"✓ Table selected: {table}")
@@ -193,7 +200,7 @@ def discovery_workflow(schema: str | None = None, table: str | None = None, sear
     try:
         next_choice = input("→ ").strip()
     except EOFError:
-        print("(Non-interactive mode: exiting discovery)")
+        print("(Non-interactive mode: defaulting to exit)")
         return
 
     if next_choice == "1":
@@ -203,8 +210,7 @@ def discovery_workflow(schema: str | None = None, table: str | None = None, sear
     elif next_choice == "3":
         main()
     else:
-        print("\nSession ended. Goodbye!")
-        sys.exit(0)
+        return
 
 
 def onboarding_workflow(schema: str | None = None, table: str | None = None, dataset_name: str | None = None, limit: int | None = None) -> None:
