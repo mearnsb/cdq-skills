@@ -1,52 +1,21 @@
 #!/usr/bin/env python3
-"""Local helper for the auto-cdq-enhanced discovery slice.
+"""Auto-CDQ skill wrapper - invokes the wizard via the skill_wrapper pattern."""
 
-This script is for local validation of the first guided wizard backend path.
-It intentionally wires only the discovery flow:
-- test connection
-- list tables
-- return structured results and placeholder next steps
-
-The actual CDQ API access stays in the project root lib/client.py.
-"""
-
-from __future__ import annotations
-
-import argparse
-import json
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any
 
+# Get project root and wizard script path
 PROJECT_ROOT = Path(__file__).resolve().parents[4]
-ROOT_CLIENT = PROJECT_ROOT / "lib" / "client.py"
-ROOT_LIB = PROJECT_ROOT / "lib"
+WIZARD_SCRIPT = PROJECT_ROOT / ".claude" / "bin" / "auto-cdq-wizard.py"
 
-if str(ROOT_LIB) not in sys.path:
-    sys.path.insert(0, str(ROOT_LIB))
+# Pass all CLI arguments directly to the wizard
+result = subprocess.run(
+    [sys.executable, str(WIZARD_SCRIPT)] + sys.argv[1:],
+    cwd=PROJECT_ROOT,
+)
 
-from auth import get_config  # noqa: E402
-
-
-def _run_root_client(*args: str) -> tuple[int, str, str]:
-    """Run the shared root CDQ client and capture output."""
-    command = [sys.executable, str(ROOT_CLIENT), *args]
-    result = subprocess.run(
-        command,
-        capture_output=True,
-        text=True,
-        cwd=PROJECT_ROOT,
-    )
-    return result.returncode, result.stdout, result.stderr
-
-
-def _parse_json_output(stdout: str) -> dict[str, Any]:
-    """Parse JSON output from the shared client."""
-    try:
-        return json.loads(stdout) if stdout.strip() else {}
-    except json.JSONDecodeError as exc:
-        raise ValueError(f"Backend returned invalid JSON: {exc}") from exc
+sys.exit(result.returncode)
 
 
 def test_cdq_connection() -> dict[str, Any]:

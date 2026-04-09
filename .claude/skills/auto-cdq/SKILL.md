@@ -1,7 +1,7 @@
 ---
 name: auto-cdq
 description: "CDQ workflow wizard. Use: /auto-cdq [discovery|onboarding|rules] [--schema SCHEMA] [--table TABLE] [--dataset DATASET] [--limit N]"
-run: python3 .claude/bin/auto-cdq-wizard.py $ARGS
+run: python3 lib/client.py
 ---
 
 # Auto-CDQ — Interactive Wizard
