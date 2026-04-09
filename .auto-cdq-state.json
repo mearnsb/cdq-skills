@@ -1,0 +1,12 @@
+{
+  "phase": "",
+  "workflow": "",
+  "schema": "",
+  "table": null,
+  "dataset": null,
+  "limit": 10000,
+  "selected_rules": [],
+  "available_schemas": [],
+  "preview_data": null,
+  "analysis_result": null
+}

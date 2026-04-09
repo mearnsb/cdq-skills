@@ -55,6 +55,26 @@ See EXAMPLE_PROMPTS.md for detailed multi-step workflow templates.
 - Use cdq-save-rule, cdq-get-rules with dataset names (logical)
 - Rules and Alerts attach to datasets, not database tables
 
+## Gemini CLI Usage
+
+**Recommended command:**
+```bash
+~/.claude/bin/gemini-search -p "your query" [--approval-mode yolo]
+```
+
+Create an alias for convenience:
+```bash
+echo "alias gsearch='~/.claude/bin/gemini-search'" >> ~/.zshrc
+```
+
+Then use: `gsearch -p "your query"`
+
+**Note:** The old `gemini-wrapper.sh` has been deprecated (`.gemini-wrapper.sh.deprecated`). Use `gemini-search` instead — it's simpler, more reliable, and covers all use cases.
+
+For system-wide Gemini access from any project, use: `/gemini` skill
+
+---
+
 ## Sequential Thinking Integration
 For complex tasks, use this pattern:
 

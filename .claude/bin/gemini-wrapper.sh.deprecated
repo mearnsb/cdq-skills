@@ -1,0 +1,267 @@
+#!/bin/bash
+#
+# Gemini CLI Wrapper - Handles environment loading and validation
+# Prevents "Exit Code 41: GEMINI_API_KEY not found" errors
+#
+# Usage:
+#   ./gemini-wrapper.sh -p "your prompt" -m gemini-2.5-flash
+#   ./gemini-wrapper.sh --help
+#
+
+set -e
+
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PROJECT_ROOT="$( cd "$SCRIPT_DIR/../.." && pwd )"
+
+# Configuration
+ENV_FILE="${HOME}/.openclaw/.env"
+GEMINI_BIN="${GEMINI_BIN:-/opt/homebrew/bin/gemini}"
+DEFAULT_MODEL="${GEMINI_DEFAULT_MODEL:-gemini-2.5-flash-lite}"
+ELIGIBLE_MODELS=("gemini-2.5-flash-lite" "gemini-2.5-flash" "gemini-2.0-flash-exp" "gemini-1.5-pro")
+
+#
+# Helper Functions
+#
+
+print_error() {
+    echo "❌ ERROR: $1" >&2
+}
+
+print_success() {
+    echo "✅ $1"
+}
+
+print_info() {
+    echo "ℹ️  $1"
+}
+
+show_help() {
+    cat << 'EOF'
+Gemini CLI Wrapper - Safely run Gemini with proper environment setup
+
+USAGE:
+  gemini-wrapper.sh [options] [gemini-args...]
+
+OPTIONS:
+  -h, --help              Show this help message
+  --check                 Check if environment is properly configured
+  --debug                 Enable debug output
+  --list-models           List eligible models for testing
+
+GEMINI ARGS (passed through to gemini):
+  -p, --prompt TEXT       Prompt text
+  -m, --model MODEL       Model to use (default: gemini-2.5-flash-lite)
+                          Eligible: gemini-2.5-flash-lite, gemini-2.5-flash, gemini-2.0-flash-exp, gemini-1.5-pro
+  --approval-mode MODE    Mode: default, auto_edit, yolo, plan
+  [any other gemini args]
+
+EXAMPLES:
+  # Basic usage (uses default: gemini-2.5-flash-lite)
+  gemini-wrapper.sh -p "Hello"
+
+  # With explicit model
+  gemini-wrapper.sh -p "Hello" -m gemini-2.5-flash
+
+  # With approval mode
+  gemini-wrapper.sh -p "Create a script" -m gemini-2.5-flash-lite --approval-mode yolo
+
+  # Check configuration
+  gemini-wrapper.sh --check
+
+  # List eligible models
+  gemini-wrapper.sh --list-models
+
+  # Debug mode
+  gemini-wrapper.sh --debug -p "test"
+
+ENVIRONMENT:
+  GEMINI_API_KEY           Required - from ~/.openclaw/.env
+  GEMINI_DEFAULT_MODEL     Optional - override default model (default: gemini-2.5-flash-lite)
+  GEMINI_BIN               Optional - path to gemini binary (default: /opt/homebrew/bin/gemini)
+  ENV_FILE                 Optional - path to .env file (default: ~/.openclaw/.env)
+
+TROUBLESHOOTING:
+  Exit Code 41: GEMINI_API_KEY not found
+    → Check ~/.openclaw/.env contains GEMINI_API_KEY=sk-...
+    → Run with --check flag to diagnose
+    → See: GEMINI_SETUP_GUIDE.md
+
+EOF
+}
+
+check_config() {
+    local issues=0
+
+    echo "🔍 Checking Gemini Configuration..."
+    echo ""
+
+    # Check .env file exists
+    if [ -f "$ENV_FILE" ]; then
+        print_success ".env file found: $ENV_FILE"
+    else
+        print_error ".env file not found: $ENV_FILE"
+        issues=$((issues + 1))
+    fi
+
+    # Check gemini binary exists
+    if [ -x "$GEMINI_BIN" ]; then
+        print_success "Gemini binary found: $GEMINI_BIN"
+    else
+        print_error "Gemini binary not found or not executable: $GEMINI_BIN"
+        issues=$((issues + 1))
+    fi
+
+    # Check GEMINI_API_KEY in env file
+    if [ -f "$ENV_FILE" ]; then
+        if grep -q "^GEMINI_API_KEY=" "$ENV_FILE"; then
+            local key_value=$(grep "^GEMINI_API_KEY=" "$ENV_FILE" | cut -d '=' -f2)
+            if [ -n "$key_value" ]; then
+                local key_preview="${key_value:0:10}..."
+                print_success "GEMINI_API_KEY found in .env (preview: $key_preview)"
+            else
+                print_error "GEMINI_API_KEY is empty in .env"
+                issues=$((issues + 1))
+            fi
+        else
+            print_error "GEMINI_API_KEY not found in .env"
+            issues=$((issues + 1))
+        fi
+    fi
+
+    echo ""
+    print_info "Default model: $DEFAULT_MODEL"
+    print_info "Eligible models: ${ELIGIBLE_MODELS[*]}"
+
+    echo ""
+    if [ $issues -eq 0 ]; then
+        print_success "All checks passed! Ready to use."
+        return 0
+    else
+        print_error "Found $issues issue(s). Fix them and retry."
+        return 1
+    fi
+}
+
+list_models() {
+    echo "📋 Eligible Gemini Models for Testing:"
+    echo ""
+    local i=1
+    for model in "${ELIGIBLE_MODELS[@]}"; do
+        if [ "$model" = "$DEFAULT_MODEL" ]; then
+            echo "  [$i] $model (default)"
+        else
+            echo "  [$i] $model"
+        fi
+        i=$((i + 1))
+    done
+    echo ""
+    echo "Usage: gemini-wrapper.sh -p 'prompt' -m <model>"
+}
+
+load_environment() {
+    if [ "$DEBUG" = "1" ]; then
+        print_info "Loading environment from: $ENV_FILE"
+    fi
+
+    # Use set -a to automatically export all variables
+    set -a
+    if [ -f "$ENV_FILE" ]; then
+        source "$ENV_FILE"
+    else
+        print_error "Environment file not found: $ENV_FILE"
+        print_error "Create it with: echo 'GEMINI_API_KEY=sk-...' > $ENV_FILE"
+        exit 1
+    fi
+    set +a
+}
+
+validate_environment() {
+    if [ -z "$GEMINI_API_KEY" ]; then
+        print_error "GEMINI_API_KEY is not set!"
+        echo ""
+        echo "Solutions:"
+        echo "  1. Check ~/.openclaw/.env contains: GEMINI_API_KEY=sk-..."
+        echo "  2. Ensure it's not empty"
+        echo "  3. Run './gemini-wrapper.sh --check' to diagnose"
+        echo ""
+        exit 1
+    fi
+
+    if [ "$DEBUG" = "1" ]; then
+        local key_preview="${GEMINI_API_KEY:0:10}..."
+        print_info "GEMINI_API_KEY loaded (preview: $key_preview)"
+    fi
+}
+
+run_gemini() {
+    local args=("$@")
+    local has_model=0
+    local has_approval_mode=0
+
+    # Check if -m/--model is provided
+    for i in "${!args[@]}"; do
+        if [ "${args[$i]}" = "-m" ] || [ "${args[$i]}" = "--model" ]; then
+            has_model=1
+            break
+        fi
+    done
+
+    # Check if --approval-mode is provided
+    for i in "${!args[@]}"; do
+        if [ "${args[$i]}" = "--approval-mode" ]; then
+            has_approval_mode=1
+            break
+        fi
+    done
+
+    # Add default model if not specified
+    if [ $has_model -eq 0 ]; then
+        args+=("-m" "$DEFAULT_MODEL")
+    fi
+
+    # Add default approval mode if not specified
+    if [ $has_approval_mode -eq 0 ]; then
+        args+=("--approval-mode" "yolo")
+    fi
+
+    if [ "$DEBUG" = "1" ]; then
+        print_info "Running: $GEMINI_BIN ${args[@]}"
+    fi
+
+    exec "$GEMINI_BIN" "${args[@]}"
+}
+
+#
+# Main
+#
+
+# Parse arguments
+DEBUG=0
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -h|--help)
+            show_help
+            exit 0
+            ;;
+        --check)
+            check_config
+            exit $?
+            ;;
+        --list-models)
+            list_models
+            exit 0
+            ;;
+        --debug)
+            DEBUG=1
+            shift
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
+
+# Execute workflow
+load_environment
+validate_environment
+run_gemini "$@"

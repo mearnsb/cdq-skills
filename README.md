@@ -403,6 +403,56 @@ cdq-<name>/
 
 The shared `skill_wrapper.py` consolidates duplicated wrapper logic, reducing each skill's wrapper from ~38 lines to 6 lines.
 
+## Using Gemini CLI with CDQ Skills
+
+For detailed setup and troubleshooting guidance, see **[GEMINI_SETUP_GUIDE.md](./GEMINI_SETUP_GUIDE.md)** and **[GEMINI_EXAMPLES.md](./GEMINI_EXAMPLES.md)**.
+
+### Quick Start (Gemini CLI)
+
+```bash
+# 1. Ensure API key is configured
+echo $GEMINI_API_KEY  # Should print your key
+
+# 2. Use the wrapper script (handles environment automatically)
+~/.claude/bin/gemini-wrapper.sh -p "Research data quality best practices" -m gemini-2.5-flash
+
+# 3. Or load environment manually and use gemini directly
+set -a && source ~/.openclaw/.env && set +a
+gemini -p "your prompt" -m gemini-2.5-flash
+```
+
+### Common Gemini + CDQ Workflows
+
+```bash
+# Plan DQ rules for a table
+~/.claude/bin/gemini-wrapper.sh -p "Suggest data quality rules for a customer table with columns: id, email, name" -m gemini-2.5-flash
+
+# Code review with Gemini
+~/.claude/bin/gemini-wrapper.sh -p "Review: $(cat lib/client.py)" -m gemini-2.5-flash --approval-mode yolo
+
+# Research + planning
+~/.claude/bin/gemini-wrapper.sh -p "Research modern DQ patterns" -m gemini-2.5-flash --approval-mode auto_edit
+```
+
+### Fixing "Exit Code 41" (API Key Not Found)
+
+If you get `Exit code 41: GEMINI_API_KEY not found`:
+
+```bash
+# Check configuration with diagnostic output
+~/.claude/bin/gemini-wrapper.sh --check
+
+# Or manually set for current session
+set -a && source ~/.openclaw/.env && set +a
+
+# Or add to ~/.zshrc for persistence
+echo 'set -a; [ -f ~/.openclaw/.env ] && source ~/.openclaw/.env; set +a' >> ~/.zshrc
+```
+
+See **[GEMINI_SETUP_GUIDE.md](./GEMINI_SETUP_GUIDE.md)** for complete setup and troubleshooting.
+
+---
+
 ## Multi-Step Task Workflows
 
 For complex, multi-step CDQ tasks that require planning, validation, and progress tracking, see **[EXAMPLE_PROMPTS.md](./EXAMPLE_PROMPTS.md)**.

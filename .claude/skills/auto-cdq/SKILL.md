@@ -1,20 +1,34 @@
 ---
 name: auto-cdq
-description: Enhanced guided CDQ workflow assistant with hybrid multi-section headers, interactive skill execution, and progressive disclosure for data quality management.
+description: 'Interactive guided CDQ workflow (Discovery → Onboarding → Rules). Combines multi-section progress headers, real skill execution, validation loops, and progressive disclosure. NOT a headless automation tool - use direct Python CLI for non-interactive mode.'
+interaction: interactive
+mode: user-guided
+references:
+  - see_also: docs/CDQ_SKILL_SEQUENCING_CHECKLIST.md for non-interactive workflows
+  - see_also: docs/INTERACTIVE_VS_NONINTERACTIVE.md for mode distinction
 commands:
   - name: auto-cdq
     description: Show workflow selection menu (Discovery, Onboarding, Rules)
-  - name: auto-cdq:discovery
-    description: Jump straight to Discovery Workflow - find and preview tables with multi-section progress
-  - name: auto-cdq:onboarding
-    description: Jump straight to Onboarding Workflow - register dataset with guided configuration
-  - name: auto-cdq:rules
-    description: Jump straight to Rules Workflow - analyze and create quality rules with validation
+  - name: auto-cdq discovery
+    description: 'Start Discovery Workflow - find and preview tables with multi-section progress tracking'
+  - name: auto-cdq onboarding
+    description: 'Start Onboarding Workflow - register dataset with config validation and guided execution'
+  - name: auto-cdq rules
+    description: 'Start Rules Workflow - analyze data, create quality rules with per-rule testing'
 ---
 
-# Auto-CDQ — Hybrid Progressive Disclosure Pattern
+# Auto-CDQ — Interactive Guided Workflows
 
-An interactive wizard combining **multi-section header progress tracking** with **real skill execution** and **validation loops**. Users see professional wizard UX while getting actual data from CDQ backend.
+**INTERACTIVE ONLY** - This skill provides guided, exploratory workflows with multi-section progress headers, skill execution between questions, and validation loops.
+
+For headless/automation/non-interactive workflows, use direct Python invocation:
+```bash
+python3 .claude/bin/auto-cdq-wizard.py discovery --schema samples --table accounts
+```
+
+## Pattern: Hybrid Progressive Disclosure
+
+Combines **multi-section header progress tracking** with **real skill execution** and **validation loops**. Users see professional wizard UX while controlling pacing and exploring alternatives with actual data from CDQ backend.
 
 ## Pattern Architecture
 

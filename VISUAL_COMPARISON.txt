@@ -1,0 +1,190 @@
+╔════════════════════════════════════════════════════════════════════════════════╗
+║                    MULTI-SECTION HEADERS: BEFORE vs AFTER                      ║
+╚════════════════════════════════════════════════════════════════════════════════╝
+
+═══════════════════════════════════════════════════════════════════════════════════
+  BEFORE: Single Section (Current auto-cdq Implementation)
+═══════════════════════════════════════════════════════════════════════════════════
+
+Step 1: Schema Selection
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│ ☐ Schema                                                                        │
+│                                                                                 │
+│ Which schema should we search in?                                              │
+│                                                                                 │
+│ ❯ 1. samples (Recommended)                                                      │
+│   2. Type something else                                                        │
+│   3. Chat about this                                                            │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+Step 2: Table Selection (separate question)
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│ ☐ Table                                                                         │
+│                                                                                 │
+│ Which table would you like to work with?                                       │
+│                                                                                 │
+│ ❯ 1. customers (Recommended)                                                    │
+│   2. Search by pattern                                                          │
+│   3. Browse all tables                                                          │
+│   4. Type something else                                                        │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+Step 3: Preview (separate question)
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│ ☐ Preview                                                                       │
+│                                                                                 │
+│ Does the preview look correct?                                                 │
+│                                                                                 │
+│ ❯ 1. Yes, use this table (Recommended)                                          │
+│   2. Preview more rows                                                          │
+│   3. Choose different table                                                     │
+│   4. Chat about this                                                            │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+PROBLEMS with this approach:
+  ✗ User only sees ONE section at a time (no visual indication of workflow)
+  ✗ No context about where you are in the journey
+  ✗ Can't easily navigate backward without re-asking all questions
+  ✗ Feels like separate questions, not a cohesive wizard
+
+
+═══════════════════════════════════════════════════════════════════════════════════
+  AFTER: Multi-Section Headers (Recommended Pattern)
+═══════════════════════════════════════════════════════════════════════════════════
+
+Step 1: Entire Discovery Phase (4 questions in ONE call)
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│ ☐ Schema    ☐ Table    ☐ Preview    ☐ Confirm                                 │
+│                                                                                 │
+│ Which schema should we search in?                                              │
+│                                                                                 │
+│ ❯ 1. samples (Recommended)                                                      │
+│   2. Type something else                                                        │
+│   3. Chat about this                                                            │
+│                                                                                 │
+│ (Press → to move to next section)                                              │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+After user answers Q1 and presses Enter (moves to Q2 automatically)
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│ ✓ Schema    ☐ Table    ☐ Preview    ☐ Confirm                                 │
+│                                                                                 │
+│ Which table would you like to work with?                                       │
+│                                                                                 │
+│ ❯ 1. customers (Recommended)                                                    │
+│   2. Search by pattern                                                          │
+│   3. Browse all tables                                                          │
+│   4. Type something else                                                        │
+│                                                                                 │
+│ (Press → to continue, ← to go back and change schema)                          │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+User presses ← to go back (revisit schema choice)
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│ ☐ Schema    ☐ Table    ☐ Preview    ☐ Confirm                                 │
+│                                                                                 │
+│ Which schema should we search in?  [Can change answer here]                    │
+│                                                                                 │
+│ ❯ 1. samples (Recommended)  ← Current selection (can change)                    │
+│   2. Type something else                                                        │
+│   3. Chat about this                                                            │
+│                                                                                 │
+│ (Press → to go forward, Enter to confirm)                                      │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+After answering all 4 questions
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│ ✓ Schema    ✓ Table    ✓ Preview    ✓ Confirm                                 │
+│                                                                                 │
+│ [All sections complete - proceed to next phase]                                │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+BENEFITS of this approach:
+  ✓ User sees FULL JOURNEY (4-step wizard) at a glance
+  ✓ Visual progress: ☐ → ✓ checkmarks as you complete each section
+  ✓ Easy navigation: Press ← to go back and change answers
+  ✓ Professional UX: Matches modern setup wizards
+  ✓ No cognitive overload: Max 4 sections per batch
+  ✓ Faster interaction: Arrow keys instead of typing
+
+
+═══════════════════════════════════════════════════════════════════════════════════
+  CODE DIFFERENCE
+═══════════════════════════════════════════════════════════════════════════════════
+
+BEFORE (Single Section):
+─────────────────────────────────────────────────────────────────────────────────
+
+# Call 1
+response1 = AskUserQuestion(questions=[
+  {"question": "Which schema?", "header": "Schema", ...}
+])
+
+# Call 2 (separate)
+response2 = AskUserQuestion(questions=[
+  {"question": "Which table?", "header": "Table", ...}
+])
+
+# Call 3 (separate)
+response3 = AskUserQuestion(questions=[
+  {"question": "Preview OK?", "header": "Preview", ...}
+])
+
+
+AFTER (Multi-Section):
+─────────────────────────────────────────────────────────────────────────────────
+
+# ONE CALL with all 4 questions
+response = AskUserQuestion(questions=[
+  {"question": "Which schema?", "header": "Schema", ...},
+  {"question": "Which table?", "header": "Table", ...},
+  {"question": "Preview OK?", "header": "Preview", ...},
+  {"question": "What next?", "header": "Confirm", ...}
+])
+
+# All answers available in response dict
+schema = response["Which schema?"]
+table = response["Which table?"]
+preview_ok = response["Preview OK?"]
+next_action = response["What next?"]
+
+
+═══════════════════════════════════════════════════════════════════════════════════
+  WORKFLOW STRUCTURE RECOMMENDATION
+═══════════════════════════════════════════════════════════════════════════════════
+
+Phase 1: Workflow Selection (single batch, 1 section)
+  └─ User selects: Discovery / Onboarding / Rules
+
+Phase 2: Discovery (single batch, 4 sections)
+  ├─ Section 1: Schema selection
+  ├─ Section 2: Table selection
+  ├─ Section 3: Preview confirmation
+  └─ Section 4: Next action
+
+Phase 3: Onboarding (single batch, 4 sections)
+  ├─ Section 1: Dataset name
+  ├─ Section 2: Sample size
+  ├─ Section 3: Validation
+  └─ Section 4: Confirm
+
+Phase 4: Rules (single batch, 4 sections)
+  ├─ Section 1: Column analysis
+  ├─ Section 2: Rule selection
+  ├─ Section 3: Rule testing
+  └─ Section 4: Save rules
+
+
+═══════════════════════════════════════════════════════════════════════════════════
+  KEY INSIGHT
+═══════════════════════════════════════════════════════════════════════════════════
+
+The magic: Claude Code's CLI automatically renders the header bar visualization.
+
+You just need to:
+  1. Group questions into batches (max 4 per call)
+  2. Give each question a unique "header" field
+  3. Claude Code handles the rest: ☐/✓ checkmarks, ← → navigation, etc.
+
+No special code required. Just regroup your questions!
+
