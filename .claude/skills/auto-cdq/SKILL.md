@@ -1,25 +1,6 @@
 ---
 name: auto-cdq
-description: Enhanced guided CDQ workflow assistant with wizard experience for Discovery (find tables), Onboarding (register & run jobs), and Rules (create quality rules).
-arguments:
-  - name: workflow
-    description: "Workflow to run (optional): discovery, onboarding, or rules. Omit to show menu."
-    values:
-      - "discovery – Find and preview tables with guided search"
-      - "onboarding – Register dataset and run a DQ job"
-      - "rules – Analyze data and create quality rules"
-  - name: --schema
-    description: "Schema name (optional). Default: 'samples'"
-    example: "samples"
-  - name: --table
-    description: "Table name to work with (optional)"
-    example: "accounts"
-  - name: --dataset
-    description: "Dataset logical name (optional). Default: {table}_dq"
-    example: "customers_dq"
-  - name: --limit
-    description: "Row limit for preview or job (optional). Default: 5 (preview) or 10000 (job)"
-    example: "1000"
+description: "CDQ workflow wizard. Use: /auto-cdq [discovery|onboarding|rules] [--schema SCHEMA] [--table TABLE] [--dataset DATASET] [--limit N]"
 ---
 
 # Auto-CDQ — Interactive Wizard
