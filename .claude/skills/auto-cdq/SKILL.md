@@ -172,9 +172,33 @@ Selected:
 What's next?
 ```
 
+---
+
+## Dataset Naming (Before Running DQ Job)
+
+**Instruction:**
+1. Print: `Phase 5: Dataset Naming`
+2. Ask: "What logical name should we use for this dataset in CDQ?"
+3. Use `AskUserQuestion` with these options:
+   - Option 1: "{schema}.{table} (Recommended)" - Use schema.table as-is (e.g., "samples.imdb_reviews")
+   - Option 2: "CDQ_AUTO_{schema}.{table}" - Prepend CDQ_AUTO_ (e.g., "CDQ_AUTO_samples.imdb_reviews")
+   - Option 3: "Prepend with custom string" - Type string to prepend (e.g., "CUSTOM_" → "CUSTOM_samples.imdb_reviews")
+   - Option 4: "Type something else" - Enter custom logical dataset name
+   - Option 5: "Chat about this" - Discuss naming strategy
+4. Based on user selection:
+   - If Option 1 or 2: Store dataset name as-is
+   - If Option 3: Ask user: "What prefix string should we prepend?" → Store as `{prefix}{schema}.{table}`
+   - If Option 4: Ask user: "Enter custom logical dataset name" → Store as-is
+   - If Option 5: Discuss and loop back to step 2
+5. Confirm: "Using logical dataset name: {dataset_name}"
+
+**Next Step:** Proceed to run DQ job with selected dataset name
+
+---
+
 Then ask: "What would you like to do next?"
-- Option 1: "Run DQ job" → `/cdq-run-dq-job --dataset "{table}" --sql "SELECT * FROM \`{schema}.{table}\` LIMIT 10000"`
-- Option 2: "Create rules" → `/cdq-workflow-suggest-rules --dataset "{table}"`
+- Option 1: "Run DQ job" → `/cdq-run-dq-job --dataset "{dataset_name}" --sql "SELECT * FROM \`{schema}.{table}\` LIMIT 10000"`
+- Option 2: "Create rules" → (First run DQ job above, then create rules)
 - Option 3: "Preview more data" → Run another `/cdq-run-sql`
 - Option 4: "Exit" → End workflow
 

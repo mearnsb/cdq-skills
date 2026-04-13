@@ -85,3 +85,24 @@ GITHUB_PUSH_READY.txt
 *-changes-summary.md
 *-changes-complete.md
 CHANGES_COMPLETE.md
+
+# Runtime/session state files (ephemeral, user-specific)
+.auto-cdq-state.json
+
+# Internal planning, decision logs, and implementation notes (not for public repo)
+ANALYSIS_*.md
+AUTO_CDQ_*.md
+AUTO-CDQ-*.md
+AUTORESEARCH_*.md
+BEFORE_AFTER_*.md
+GUIDE_*.md
+IMPLEMENTATION_*.md
+QUICK_REFERENCE.md
+QUICK_START_*.md
+README_*.md
+SUMMARY_*.md
+GEMINI_MIGRATION.md
+CLAUDE.md
+plans/
+geminibackup/
+autoresearch-results.tsv
