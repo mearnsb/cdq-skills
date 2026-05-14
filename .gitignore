@@ -3,6 +3,7 @@
 .env.local
 .env.*.local
 *.bak
+*.backup*
 .cursorignore 
 
 # Python
@@ -46,9 +47,13 @@ Thumbs.db
 # Logs
 *.log
 
-# Claude Code and Gemini CLI local settings
+# Claude Code and Gemini CLI local settings (user/session-specific)
 .claude/settings.local.json
+.claude/settings.json
 .claude/projects/
+.claude/worktrees/
+.claude/keybindings.json
+.claude/memory/
 .gemini/
 
 # Secrets and credentials
