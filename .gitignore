@@ -106,3 +106,22 @@ CLAUDE.md
 plans/
 geminibackup/
 autoresearch-results.tsv
+
+# Session artifacts and delivery reports (internal only)
+ALL_DELIVERABLES.md
+BULK_ONBOARDING_*.md
+EXAMPLE_PROMPTS.md
+FILE_MANIFEST.md
+ONBOARDING_COMPLETION_REPORT.md
+QUICK_START.md
+onboarding-manifest.json
+IMPLEMENTATION_SUMMARY.md
+README_ONBOARDING.md
+select
+
+# Batch onboarding scripts (internal tools, not for public repo)
+scripts/
+!scripts/.gitkeep
+
+# Session lock files
+.claude/scheduled_tasks.lock
