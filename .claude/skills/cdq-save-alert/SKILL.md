@@ -12,7 +12,7 @@ Create a new alert that triggers when conditions are met.
 ## Usage
 
 ```bash
-python lib/client.py save-alert \
+cdq-save-alert \
   --dataset "DATASET_NAME" \
   --name "Alert Name" \
   --condition "score < 90" \
@@ -54,14 +54,14 @@ curl -sk -X POST "${DQ_URL}/v3/alerts" \
 
 ```bash
 # Alert on low DQ score
-python lib/client.py save-alert \
+cdq-save-alert \
   --dataset "MY_DATASET" \
   --name "Customer DQ Alert" \
   --condition "score < 85" \
   --email "dq-team@company.com"
 
 # Alert on specific rule failure
-python lib/client.py save-alert \
+cdq-save-alert \
   --dataset "ORDERS_DATASET" \
   --name "Order Check Failure" \
   --condition "rule_failed('Unique Order ID')" \
@@ -69,7 +69,7 @@ python lib/client.py save-alert \
   --message "Order uniqueness check failed"
 
 # Alert with custom message
-python lib/client.py save-alert \
+cdq-save-alert \
   --dataset "INVENTORY" \
   --name "Inventory Alert" \
   --condition "score < 90" \

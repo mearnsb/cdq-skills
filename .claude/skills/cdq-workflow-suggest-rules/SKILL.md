@@ -19,10 +19,10 @@ Before running analysis, always check dataset size to avoid resource issues:
 
 ```bash
 # Quick row count check (always run this first)
-python lib/client.py run-sql --sql "SELECT COUNT(*) as row_count FROM schema.table LIMIT 1"
+cdq-run-sql --sql "SELECT COUNT(*) as row_count FROM schema.table LIMIT 1"
 
 # Quick column count check (estimate from schema)
-python lib/client.py run-sql --sql "SELECT * FROM schema.table LIMIT 1"
+cdq-run-sql --sql "SELECT * FROM schema.table LIMIT 1"
 ```
 
 ## Thresholds and Warnings
@@ -45,19 +45,19 @@ python lib/client.py run-sql --sql "SELECT * FROM schema.table LIMIT 1"
 
 ```bash
 # Step 1: Check size first (quick row count)
-python lib/client.py run-sql --sql "SELECT COUNT(*) as row_count FROM schema.table LIMIT 1"
+cdq-run-sql --sql "SELECT COUNT(*) as row_count FROM schema.table LIMIT 1"
 
 # Step 2: If < 100M rows, explore schema (LIMIT 5)
-python lib/client.py run-sql --sql "SELECT * FROM schema.table LIMIT 5"
+cdq-run-sql --sql "SELECT * FROM schema.table LIMIT 5"
 
 # Step 3: Check existing rules to avoid duplicates
-python lib/client.py get-rules --dataset "MY_DATASET"
+cdq-get-rules --dataset "MY_DATASET"
 
 # Step 4: Run analysis queries to find rule opportunities
 # (see patterns below)
 
 # Step 5: Save selected rules
-python lib/client.py save-rule --dataset "MY_DATASET" --name "Rule" --sql "SELECT..."
+cdq-save-rule --dataset "MY_DATASET" --name "Rule" --sql "SELECT..."
 ```
 
 ## Analysis Patterns
@@ -178,13 +178,13 @@ Always run these first:
 
 ```bash
 # 1. Row count (takes ~5-10s on large tables)
-python lib/client.py run-sql --sql "SELECT COUNT(*) as cnt FROM schema.table LIMIT 1"
+cdq-run-sql --sql "SELECT COUNT(*) as cnt FROM schema.table LIMIT 1"
 
 # 2. Schema check (LIMIT 1 is fast)
-python lib/client.py run-sql --sql "SELECT * FROM schema.table LIMIT 1"
+cdq-run-sql --sql "SELECT * FROM schema.table LIMIT 1"
 
 # 3. Check existing rules to avoid duplicates
-python lib/client.py get-rules --dataset "MY_DATASET"
+cdq-get-rules --dataset "MY_DATASET"
 
 # If row count > 100M: STOP and ask user
 # If columns > 100: Limit to key columns
@@ -195,24 +195,24 @@ python lib/client.py get-rules --dataset "MY_DATASET"
 
 ```bash
 # 1. Explore schema
-python lib/client.py run-sql --sql "SELECT * FROM customers LIMIT 5"
+cdq-run-sql --sql "SELECT * FROM customers LIMIT 5"
 
 # 2. Check cardinality for key columns
-python lib/client.py run-sql --sql "SELECT status, COUNT(*) as cnt FROM customers GROUP BY status LIMIT 20"
+cdq-run-sql --sql "SELECT status, COUNT(*) as cnt FROM customers GROUP BY status LIMIT 20"
 
 # 3. Check null percentages
-python lib/client.py run-sql --sql "SELECT COUNT(*) as total, SUM(CASE WHEN email IS NULL THEN 1 ELSE 0 END) as nulls FROM customers LIMIT 1"
+cdq-run-sql --sql "SELECT COUNT(*) as total, SUM(CASE WHEN email IS NULL THEN 1 ELSE 0 END) as nulls FROM customers LIMIT 1"
 
 # 4. Sample to find patterns
-python lib/client.py run-sql --sql "SELECT DISTINCT phone FROM customers LIMIT 20"
+cdq-run-sql --sql "SELECT DISTINCT phone FROM customers LIMIT 20"
 
 # 5. Save rules based on findings (use actual schema.table, no spaces in name)
-python lib/client.py save-rule \
+cdq-save-rule \
   --dataset "CUSTOMER_DATA" \
   --name "valid_status_values" \
   --sql "SELECT * FROM schema.table WHERE status NOT IN ('ACTIVE','INACTIVE','PENDING')"
 
-python lib/client.py save-rule \
+cdq-save-rule \
   --dataset "CUSTOMER_DATA" \
   --name "email_not_null" \
   --sql "SELECT * FROM schema.table WHERE email IS NULL"
@@ -232,7 +232,7 @@ Before proposing or saving any rule, always check existing rules:
 
 ```bash
 # Check existing rules first
-python lib/client.py get-rules --dataset "MY_DATASET"
+cdq-get-rules --dataset "MY_DATASET"
 ```
 
 ### Check Questions:

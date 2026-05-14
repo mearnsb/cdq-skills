@@ -13,34 +13,34 @@ Run a complete DQ job workflow: explore first with limits, run job, check status
 
 ```bash
 # Run complete workflow in one go
-python lib/client.py run-dq-job \
+cdq-run-dq-job \
   --dataset "MY_DATASET" \
   --sql "SELECT * FROM schema.table LIMIT 100000"
 
 # Then check results
-python lib/client.py get-results --dataset "MY_DATASET" --run-id "2026-03-09"
+cdq-get-results --dataset "MY_DATASET" --run-id "2026-03-09"
 
 # Or get job status
-python lib/client.py get-jobs --limit 5
+cdq-get-jobs --limit 5
 ```
 
 ## Complete Workflow
 
 ```bash
 # Step 1: Explore first (recommended)
-python lib/client.py run-sql --sql "SELECT * FROM schema.table LIMIT 5"
-python lib/client.py run-sql --sql "SELECT COUNT(*) as cnt FROM schema.table"
+cdq-run-sql --sql "SELECT * FROM schema.table LIMIT 5"
+cdq-run-sql --sql "SELECT COUNT(*) as cnt FROM schema.table"
 
 # Step 2: Run DQ job with appropriate limit
-python lib/client.py run-dq-job \
+cdq-run-dq-job \
   --dataset "MY_DATASET" \
   --sql "SELECT * FROM schema.table LIMIT 100000"
 
 # Step 3: Check job status
-python lib/client.py get-jobs --limit 3
+cdq-get-jobs --limit 3
 
 # Step 4: Get results (after job completes)
-python lib/client.py get-results --dataset "MY_DATASET" --run-id "2026-03-09"
+cdq-get-results --dataset "MY_DATASET" --run-id "2026-03-09"
 ```
 
 ## Parameters
@@ -97,17 +97,17 @@ python lib/client.py get-results --dataset "MY_DATASET" --run-id "2026-03-09"
 
 ```bash
 # Standard workflow with 100k limit (default)
-python lib/client.py run-dq-job \
+cdq-run-dq-job \
   --dataset "SALES_ANALYSIS" \
   --sql "SELECT * FROM sales.orders LIMIT 100000"
 
 # Smaller exploratory run
-python lib/client.py run-dq-job \
+cdq-run-dq-job \
   --dataset "QUICK_CHECK" \
   --sql "SELECT * FROM customers LIMIT 1000"
 
 # Check specific run
-python lib/client.py get-results \
+cdq-get-results \
   --dataset "SALES_ANALYSIS" \
   --run-id "2026-03-09"
 ```

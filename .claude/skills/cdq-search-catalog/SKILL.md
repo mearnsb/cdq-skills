@@ -14,7 +14,7 @@ Search the data catalog to find registered datasets.
 ## Usage
 
 ```bash
-python lib/client.py search-catalog --query "search_term" --limit 20
+cdq-search-catalog --query "search_term" --limit 20
 ```
 
 ## Alternative (curl)
@@ -40,13 +40,13 @@ curl -sk "${DQ_URL}/v2/getdataassetsarrforserversidewithmultifilters?draw=3&star
 
 ```bash
 # List all registered datasets
-python lib/client.py search-catalog --query "" --limit 100
+cdq-search-catalog --query "" --limit 100
 
 # Search for specific datasets
-python lib/client.py search-catalog --query "customer"
+cdq-search-catalog --query "customer"
 
 # Search with specific connection
-python lib/client.py search-catalog --query "sales" --connection SNOWFLAKE
+cdq-search-catalog --query "sales" --connection SNOWFLAKE
 ```
 
 ## Output

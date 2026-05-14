@@ -15,7 +15,7 @@ Create a new Data Quality rule for a dataset.
 
 ```bash
 # Use actual schema.table in rule SQL (not {dataset} placeholder)
-python lib/client.py save-rule --dataset "DATASET_NAME" --name "Rule Name" --sql "SELECT * FROM schema.table WHERE col IS NULL"
+cdq-save-rule --dataset "DATASET_NAME" --name "Rule Name" --sql "SELECT * FROM schema.table WHERE col IS NULL"
 ```
 
 ## Alternative (curl)
@@ -34,48 +34,49 @@ curl -sk -X POST "${DQ_URL}/v3/rules" \
     "ruleType": "SQLF",
     "ruleValue": "SELECT * FROM table WHERE col IS NULL",
     "points": 1,
-    "perc": 1
+    "perc": 10,
+    "scoringScheme": 1
   }'
 ```
 
 ## Parameters
 
-| Parameter | Required | Description |
-|-----------|----------|-------------|
-| `--dataset` | Yes | Dataset name (logical name registered in CDQ) |
-| `--name` | Yes | Rule name |
-| `--sql` | Yes | SQL query - rows returned = failures |
-| `--points` | No | Point value (default: 1) |
-| `--perc` | No | Percentage threshold (default: 1) |
+| Parameter | Required | Default | Description |
+|-----------|----------|---------|-------------|
+| `--dataset` | Yes | - | Dataset name (logical name registered in CDQ) |
+| `--name` | Yes | - | Rule name |
+| `--sql` | Yes | - | SQL query - rows returned = failures |
+| `--points` | No | 1 | Point value (optional) |
+| `--perc` | No | 10 | Percentage threshold (default: 10) |
+| `--scoring-scheme` | No | 1 | Scoring scheme: `0` = absolute, `1` = proportional (default: 1) |
+
+## Usage
+
+```bash
+# Minimal (uses defaults: points=1, perc=10, scoring-scheme=1)
+cdq-save-rule --dataset "DATASET_NAME" --name "Rule Name" --sql "SELECT * FROM schema.table WHERE col IS NULL"
+
+# Custom scoring: absolute with custom points
+cdq-save-rule --dataset "DATASET_NAME" --name "Rule Name" --sql "SELECT * FROM schema.table WHERE col IS NULL" --scoring-scheme 0 --points 5
+
+# Custom scoring: proportional with higher threshold
+cdq-save-rule --dataset "DATASET_NAME" --name "Rule Name" --sql "SELECT * FROM schema.table WHERE col IS NULL" --points 5 --perc 20
+```
 
 ## Examples
 
 ```bash
-# Completeness rule - check for null values (use actual schema.table)
-python lib/client.py save-rule \
-  --dataset "MY_DATASET" \
-  --name "email_not_null" \
-  --sql "SELECT * FROM schema.table WHERE email IS NULL"
+# Completeness rule - check for null values
+cdq-save-rule --dataset "MY_DATASET" --name "email_not_null" --sql "SELECT * FROM schema.table WHERE email IS NULL"
 
 # Uniqueness rule
-python lib/client.py save-rule \
-  --dataset "ORDERS_DATASET" \
-  --name "unique_order_id" \
-  --sql "SELECT order_id, COUNT(*) as cnt FROM schema.table GROUP BY order_id HAVING COUNT(*) > 1"
+cdq-save-rule --dataset "ORDERS_DATASET" --name "unique_order_id" --sql "SELECT order_id, COUNT(*) as cnt FROM schema.table GROUP BY order_id HAVING COUNT(*) > 1"
 
-# Range check with threshold
-python lib/client.py save-rule \
-  --dataset "PRODUCTS" \
-  --name "price_range_check" \
-  --sql "SELECT * FROM schema.table WHERE price < 0 OR price > 1000000" \
-  --points 5 \
-  --perc 10
+# Range check
+cdq-save-rule --dataset "PRODUCTS" --name "price_range_check" --sql "SELECT * FROM schema.table WHERE price < 0 OR price > 1000000"
 
-# Cross-table reconciliation (use actual schema.table names)
-python lib/client.py save-rule \
-  --dataset "RECON_DATASET" \
-  --name "Source vs Target Match" \
-  --sql "SELECT * FROM source_table s FULL OUTER JOIN target_table t ON s.id = t.id WHERE s.id IS NULL OR t.id IS NULL"
+# Cross-table reconciliation
+cdq-save-rule --dataset "RECON_DATASET" --name "Source vs Target Match" --sql "SELECT * FROM source_table s FULL OUTER JOIN target_table t ON s.id = t.id WHERE s.id IS NULL OR t.id IS NULL"
 ```
 
 ## Rule SQL Tips

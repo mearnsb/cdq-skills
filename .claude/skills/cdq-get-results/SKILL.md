@@ -10,7 +10,7 @@ Retrieve the results of a DQ job run (hoot results).
 ## Usage
 
 ```bash
-python lib/client.py get-results --dataset "schema.table" --run-id "2025-03-09"
+cdq-get-results --dataset "schema.table" --run-id "2025-03-09"
 ```
 
 ## Alternative (curl)
@@ -35,10 +35,10 @@ curl -sk "${DQ_URL}/v2/gethoot?dataset=schema.table&runId=2025-03-09" \
 
 ```bash
 # Get results for specific run
-python lib/client.py get-results --dataset "samples.nyse_categorical" --run-id "2025-03-09"
+cdq-get-results --dataset "samples.nyse_categorical" --run-id "2025-03-09"
 
 # Get results for today's run
-python lib/client.py get-results --dataset "my_dataset.customers" --run-id "$(date +%Y-%m-%d)"
+cdq-get-results --dataset "my_dataset.customers" --run-id "$(date +%Y-%m-%d)"
 ```
 
 ## Output

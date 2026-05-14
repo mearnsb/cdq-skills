@@ -12,7 +12,7 @@ Retrieve alerts configured for a specific dataset.
 ## Usage
 
 ```bash
-python lib/client.py get-alerts --dataset "DATASET_NAME"
+cdq-get-alerts --dataset "DATASET_NAME"
 ```
 
 ## Alternative (curl)
@@ -36,13 +36,13 @@ curl -sk "${DQ_URL}/v2/getalerts?dataset=DATASET_NAME" \
 
 ```bash
 # Get all alerts for a dataset
-python lib/client.py get-alerts --dataset "MY_DATASET"
+cdq-get-alerts --dataset "MY_DATASET"
 
 # Get alerts using schema-like name
-python lib/client.py get-alerts --dataset "samples.nyse_categorical"
+cdq-get-alerts --dataset "samples.nyse_categorical"
 
 # Find dataset names via search-catalog
-python lib/client.py search-catalog --query "" --limit 50
+cdq-search-catalog --query "" --limit 50
 ```
 
 ## Output

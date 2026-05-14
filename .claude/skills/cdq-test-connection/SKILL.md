@@ -10,7 +10,7 @@ Test connection to the Collibra DQ API.
 ## Usage
 
 ```bash
-python lib/client.py test-connection
+cdq-test-connection
 ```
 
 ## Parameters
@@ -21,7 +21,7 @@ None - tests connection using configured credentials.
 
 ```bash
 # Test API connection
-python lib/client.py test-connection
+cdq-test-connection
 ```
 
 ## Output

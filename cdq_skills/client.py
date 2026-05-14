@@ -4,18 +4,18 @@
 A single-file wrapper for all CDQ API operations. Each command maps to a skill.
 
 Usage:
-    python lib/client.py test-connection
-    python lib/client.py run-sql --sql "SELECT 1"
-    python lib/client.py get-rules --dataset "my_table"
-    python lib/client.py save-rule --dataset "my_table" --name "Rule" --sql "SELECT 1"
-    python lib/client.py delete-rule --dataset "my_table" --name "Rule"
-    python lib/client.py run-dq-job --dataset "my_table" --run-id "2025-01-23" --sql "SELECT * FROM table"
-    python lib/client.py search-catalog --query "customer"
-    python lib/client.py get-jobs
-    python lib/client.py get-dataset --dataset "my_table"
-    python lib/client.py get-results --dataset "my_table" --run-id "2025-01-23"
-    python lib/client.py get-alerts --dataset "my_table"
-    python lib/client.py save-alert --dataset "my_table" --name "Alert" --condition "score < 90"
+    cdq-test-connection
+    cdq-run-sql --sql "SELECT 1"
+    cdq-get-rules --dataset "my_table"
+    cdq-save-rule --dataset "my_table" --name "Rule" --sql "SELECT 1"
+    cdq-delete-rule --dataset "my_table" --name "Rule"
+    cdq-run-dq-job --dataset "my_table" --run-id "2025-01-23" --sql "SELECT * FROM table"
+    cdq-search-catalog --query "customer"
+    cdq-get-jobs
+    cdq-get-dataset --dataset "my_table"
+    cdq-get-results --dataset "my_table" --run-id "2025-01-23"
+    cdq-get-alerts --dataset "my_table"
+    cdq-save-alert --dataset "my_table" --name "Alert" --condition "score < 90"
 """
 
 import argparse
@@ -29,8 +29,11 @@ import urllib3
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-# Import auth module from same directory
-from auth import get_config, get_headers, get_token, test_connection
+# Import auth module
+try:
+    from .auth import get_config, get_headers, get_token, test_connection
+except ImportError:
+    from auth import get_config, get_headers, get_token, test_connection
 
 
 def _api_get(endpoint: str, params: dict = None) -> dict:

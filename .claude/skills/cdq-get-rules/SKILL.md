@@ -11,8 +11,14 @@ Retrieve Data Quality rules configured for a specific dataset.
 
 ## Usage
 
+After `pip install -e .`, run:
 ```bash
-python lib/client.py get-rules --dataset "DATASET_NAME"
+cdq-get-rules --dataset "DATASET_NAME"
+```
+
+Or directly from skill directory:
+```bash
+cdq-get-rules --dataset "DATASET_NAME"
 ```
 
 ## Alternative (curl)
@@ -37,16 +43,16 @@ curl -sk "${DQ_URL}/v3/rules/DATASET_NAME" \
 
 ```bash
 # Get rules using logical dataset name
-python lib/client.py get-rules --dataset "MY_DATASET"
+cdq-get-rules --dataset "MY_DATASET"
 
 # Get rules for a dataset named like schema.table
-python lib/client.py get-rules --dataset "samples.nyse_categorical"
+cdq-get-rules --dataset "samples.nyse_categorical"
 
 # Limit results to first 10 rules
-python lib/client.py get-rules --dataset "MY_DATASET" --limit 10
+cdq-get-rules --dataset "MY_DATASET" --limit 10
 
 # Find dataset names via search-catalog
-python lib/client.py search-catalog --query "" --limit 50
+cdq-search-catalog --query "" --limit 50
 ```
 
 ## Output

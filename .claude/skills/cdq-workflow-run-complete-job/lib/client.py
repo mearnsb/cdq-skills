@@ -1,15 +1,7 @@
 #!/usr/bin/env python3
-"""CDQ Workflow: Run Complete Job - Thin wrapper using shared skill_wrapper module.
-
-This workflow skill uses: run-dq-job, get-jobs, get-results
-"""
+"""Thin wrapper that imports and runs cdq_skills client."""
 import sys
-from pathlib import Path
+from cdq_skills.client import main
 
-# Add .claude/skills/lib to path so we can import skill_wrapper
-skill_lib = Path(__file__).parent.parent.parent / "lib"
-sys.path.insert(0, str(skill_lib))
-
-from skill_wrapper import run_skill
-
-run_skill()
+if __name__ == "__main__":
+    sys.exit(main())

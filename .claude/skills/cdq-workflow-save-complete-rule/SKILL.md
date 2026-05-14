@@ -13,11 +13,11 @@ Explore a dataset to understand its structure, then save a DQ rule with user con
 
 ```bash
 # Run complete workflow: explore, confirm, then save rule
-python lib/client.py run-sql --sql "SELECT * FROM schema.table LIMIT 5"
-python lib/client.py run-sql --sql "SELECT COUNT(*) as cnt FROM schema.table"
+cdq-run-sql --sql "SELECT * FROM schema.table LIMIT 5"
+cdq-run-sql --sql "SELECT COUNT(*) as cnt FROM schema.table"
 
 # Then save rule (use actual schema.table, no spaces in name)
-python lib/client.py save-rule \
+cdq-save-rule \
   --dataset "MY_DATASET" \
   --name "rule_name" \
   --sql "SELECT * FROM schema.table WHERE column IS NULL"
@@ -27,26 +27,26 @@ python lib/client.py save-rule \
 
 ```bash
 # Step 1: Explore data to understand schema (always use LIMIT)
-python lib/client.py run-sql --sql "SELECT * FROM schema.table LIMIT 5"
+cdq-run-sql --sql "SELECT * FROM schema.table LIMIT 5"
 
 # Step 2: Get row count
-python lib/client.py run-sql --sql "SELECT COUNT(*) as cnt FROM schema.table"
+cdq-run-sql --sql "SELECT COUNT(*) as cnt FROM schema.table"
 
 # Step 3: Check existing rules for this dataset
-python lib/client.py get-rules --dataset "MY_DATASET"
+cdq-get-rules --dataset "MY_DATASET"
 
 # Step 4: Review column names, sample values, and existing rules
 # Confirm you have the right columns and rule doesn't already exist
 
 # Step 5: Save the rule (only if no similar rule exists)
 # Use actual schema.table, NOT {dataset} placeholder
-python lib/client.py save-rule \
+cdq-save-rule \
   --dataset "MY_DATASET" \
   --name "no_nulls_email" \
   --sql "SELECT * FROM schema.table WHERE email IS NULL"
 
 # Step 6: Verify rule was saved
-python lib/client.py get-rules --dataset "MY_DATASET"
+cdq-get-rules --dataset "MY_DATASET"
 ```
 
 ## Parameters
@@ -94,16 +94,16 @@ Before saving, confirm:
 
 ```bash
 # Explore first
-python lib/client.py run-sql --sql "SELECT * FROM customers LIMIT 5"
+cdq-run-sql --sql "SELECT * FROM customers LIMIT 5"
 
 # Save rule for email validation (use actual schema.table)
-python lib/client.py save-rule \
+cdq-save-rule \
   --dataset "CUSTOMER_DATA" \
   --name "Email Not Null" \
   --sql "SELECT * FROM schema.table WHERE email IS NULL"
 
 # Check it was saved
-python lib/client.py get-rules --dataset "CUSTOMER_DATA"
+cdq-get-rules --dataset "CUSTOMER_DATA"
 ```
 
 ## Avoid Duplicate Rules
@@ -112,7 +112,7 @@ Always check for existing rules before saving a new one:
 
 ```bash
 # Check what rules already exist
-python lib/client.py get-rules --dataset "MY_DATASET"
+cdq-get-rules --dataset "MY_DATASET"
 ```
 
 ### Duplicate Check Questions:

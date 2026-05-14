@@ -10,7 +10,7 @@ Get recent DQ job run IDs and timestamps.
 ## Usage
 
 ```bash
-python lib/client.py get-recent-runs
+cdq-get-recent-runs
 ```
 
 ## Parameters
@@ -21,7 +21,7 @@ None - returns all recent runs.
 
 ```bash
 # Get recent run IDs
-python lib/client.py get-recent-runs
+cdq-get-recent-runs
 ```
 
 ## Output

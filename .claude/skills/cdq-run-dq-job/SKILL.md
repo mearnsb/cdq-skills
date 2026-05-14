@@ -14,7 +14,7 @@ Register a dataset definition and run a Data Quality job.
 ## Usage
 
 ```bash
-python lib/client.py run-dq-job \
+cdq-run-dq-job \
   --dataset "MY_DATASET" \
   --sql "SELECT * FROM actual_schema.actual_table WHERE condition = true" \
   --run-id "2025-03-09"
@@ -33,23 +33,23 @@ python lib/client.py run-dq-job \
 
 ```bash
 # Create a dataset with a logical name
-python lib/client.py run-dq-job \
+cdq-run-dq-job \
   --dataset "CUSTOMER_ANALYSIS" \
   --sql "SELECT * FROM raw.customers WHERE active = true" \
   --run-id "2025-03-09"
 
 # Use a descriptive logical name
-python lib/client.py run-dq-job \
+cdq-run-dq-job \
   --dataset "Q1_SALES_REVIEW" \
   --sql "SELECT * FROM sales.orders WHERE order_date >= '2025-01-01'"
 
 # Complex source query
-python lib/client.py run-dq-job \
+cdq-run-dq-job \
   --dataset "ENRICHED_CUSTOMERS" \
   --sql "SELECT c.*, o.total_orders FROM customers c LEFT JOIN (SELECT customer_id, COUNT(*) as total_orders FROM orders GROUP BY customer_id) o ON c.id = o.customer_id"
 
 # Run with specific connection
-python lib/client.py run-dq-job \
+cdq-run-dq-job \
   --dataset "SNOWFLAKE_DATA" \
   --sql "SELECT * FROM MY_SCHEMA.MY_TABLE" \
   --connection SNOWFLAKE
@@ -64,6 +64,13 @@ python lib/client.py run-dq-job \
 4. save-rule       → Add rules to the dataset (use logical name)
 5. run-dq-job      → Run again to execute new rules
 ```
+
+### Monitoring (after step 2)
+
+CDQ jobs typically finish in 1–2 seconds. After running a job:
+
+1. **Check `get-recent-runs` or `get-results` immediately** — no `sleep N` needed
+2. If the job is still SETUP/RUNNING (rare for CDQ), use `ScheduleWakeup` to check back in a few seconds instead of a static `sleep`
 
 ## Output
 

@@ -10,8 +10,8 @@ List DQ jobs currently in the queue.
 ## Usage
 
 ```bash
-python lib/client.py get-jobs
-python lib/client.py get-jobs --status "running" --limit 20
+cdq-get-jobs
+cdq-get-jobs --status "running" --limit 20
 ```
 
 ## Alternative (curl)
@@ -36,13 +36,13 @@ curl -sk "${DQ_URL}/v2/getowlcheckq?limit=10" \
 
 ```bash
 # List all jobs in queue
-python lib/client.py get-jobs
+cdq-get-jobs
 
 # List running jobs
-python lib/client.py get-jobs --status "running"
+cdq-get-jobs --status "running"
 
 # List recent jobs
-python lib/client.py get-jobs --limit 50
+cdq-get-jobs --limit 50
 ```
 
 ## Output

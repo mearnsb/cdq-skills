@@ -13,13 +13,13 @@ Explore a dataset to identify its structure, columns, and sample data with safe 
 
 ```bash
 # Search catalog for a table
-python lib/client.py search-catalog --query "table_name" --limit 10
+cdq-search-catalog --query "table_name" --limit 10
 
 # Explore schema + sample (LIMIT 5)
-python lib/client.py run-sql --sql "SELECT * FROM schema.table LIMIT 5"
+cdq-run-sql --sql "SELECT * FROM schema.table LIMIT 5"
 
 # Get row count
-python lib/client.py run-sql --sql "SELECT COUNT(*) as cnt FROM schema.table"
+cdq-run-sql --sql "SELECT COUNT(*) as cnt FROM schema.table"
 ```
 
 ## Parameters
@@ -43,16 +43,16 @@ Always use limits for exploratory queries:
 
 ```bash
 # Find a table in the catalog
-python lib/client.py search-catalog --query "nyse"
+cdq-search-catalog --query "nyse"
 
 # Identify columns + sample (LIMIT 5)
-python lib/client.py run-sql --sql "SELECT * FROM samples.nyse_categorical LIMIT 5"
+cdq-run-sql --sql "SELECT * FROM samples.nyse_categorical LIMIT 5"
 
 # Get total row count
-python lib/client.py run-sql --sql "SELECT COUNT(*) as cnt FROM samples.nyse_categorical"
+cdq-run-sql --sql "SELECT COUNT(*) as cnt FROM samples.nyse_categorical"
 
 # Check for nulls in a column
-python lib/client.py run-sql --sql "SELECT COUNT(*) as total, SUM(CASE WHEN column IS NULL THEN 1 ELSE 0 END) as nulls FROM table LIMIT 1"
+cdq-run-sql --sql "SELECT COUNT(*) as total, SUM(CASE WHEN column IS NULL THEN 1 ELSE 0 END) as nulls FROM table LIMIT 1"
 ```
 
 ## Workflow

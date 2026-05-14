@@ -11,15 +11,15 @@ List physical tables available in a database connection by querying INFORMATION_
 >
 > **Alternative:** If INFORMATION_SCHEMA is not accessible, you can add table reference lists to your project's CLAUDE.md or a dedicated markdown file (e.g., `docs/tables.md`). Include table names, schemas, and descriptions so Claude can help you find tables without needing API access.
 
-> **Architecture Note:** This skill uses a thin wrapper pattern. The implementation is in the project's root `lib/client.py`. The `cdq-list-tables/lib/client.py` file is just a wrapper that redirects to the main client. Always use `python lib/client.py list-tables` or invoke via the skill system.
+> **Architecture Note:** This skill uses a thin wrapper pattern. The implementation is in the project's root `lib/client.py`. The `cdq-list-tables/lib/client.py` file is just a wrapper that redirects to the main client. Always use `cdq-list-tables` or invoke via the skill system.
 
 ## Usage
 
 ```bash
-python lib/client.py list-tables
-python lib/client.py list-tables --schema samples
-python lib/client.py list-tables --search account
-python lib/client.py list-tables --limit 20
+cdq-list-tables
+cdq-list-tables --schema samples
+cdq-list-tables --search account
+cdq-list-tables --limit 20
 ```
 
 ## Parameters
@@ -35,25 +35,25 @@ python lib/client.py list-tables --limit 20
 
 ```bash
 # List first 20 tables in default schema
-python lib/client.py list-tables
+cdq-list-tables
 
 # List tables in a specific schema (BigQuery dataset)
-python lib/client.py list-tables --schema samples
+cdq-list-tables --schema samples
 
 # Search for tables containing "account" in name (LIKE %account%)
-python lib/client.py list-tables --search account
+cdq-list-tables --search account
 
 # Find tables starting with 'd' (LIKE d%)
-python lib/client.py list-tables --search "d%"
+cdq-list-tables --search "d%"
 
 # Get more results (up to 100)
-python lib/client.py list-tables --limit 100
+cdq-list-tables --limit 100
 
 # Combine schema search and limit
-python lib/client.py list-tables --schema my_dataset --limit 50
+cdq-list-tables --schema my_dataset --limit 50
 
 # Search with a connection
-python lib/client.py list-tables --schema samples --connection BQ_CONNECTION
+cdq-list-tables --schema samples --connection BQ_CONNECTION
 ```
 
 ## Database-Specific Syntax

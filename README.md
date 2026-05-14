@@ -73,10 +73,14 @@ Connection ──► Source Data (schema.table)
 ## Quick Start
 
 ```bash
-# 1. Copy environment template
-cp .env.example .env
+# 1. Clone and install
+git clone https://github.com/you/cdq-skills.git
+cd cdq-skills
+pip install -e .
 
-# 2. Edit .env with your credentials
+# 2. Copy environment template and configure
+cp .env.example .env
+# Edit .env with your credentials:
 # DQ_URL=https://your-collibra-dq-instance.com
 # DQ_USERNAME=your_username
 # DQ_PASSWORD=your_password
@@ -84,11 +88,15 @@ cp .env.example .env
 # DQ_CXN=BIGQUERY
 # DQ_VERIFY_SSL=false  # For self-signed certs
 
-# 3. Install dependencies
-pip install -r requirements.txt
+# 3. Test connection
+cdq-test-connection
+```
 
-# 4. Test connection
-python lib/client.py test-connection
+After installation, all `cdq-*` commands are available globally:
+```bash
+cdq-get-rules --dataset "MY_DATASET"
+cdq-run-sql --sql "SELECT * FROM schema.table LIMIT 10"
+cdq-save-rule --dataset "MY_DATASET" --name "rule_name" --sql "..."
 ```
 
 ## Environment Variables

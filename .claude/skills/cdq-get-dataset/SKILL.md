@@ -10,7 +10,7 @@ Retrieve the configuration/definition for a dataset.
 ## Usage
 
 ```bash
-python lib/client.py get-dataset --dataset "schema.table"
+cdq-get-dataset --dataset "schema.table"
 ```
 
 ## Alternative (curl)
@@ -34,10 +34,10 @@ curl -sk "${DQ_URL}/v2/owl-options/get?dataset=schema.table" \
 
 ```bash
 # Get dataset definition
-python lib/client.py get-dataset --dataset "samples.nyse_categorical"
+cdq-get-dataset --dataset "samples.nyse_categorical"
 
 # Get definition for specific dataset
-python lib/client.py get-dataset --dataset "my_project.my_dataset.customers"
+cdq-get-dataset --dataset "my_project.my_dataset.customers"
 ```
 
 ## Output

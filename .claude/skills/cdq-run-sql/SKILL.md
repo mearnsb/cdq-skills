@@ -12,7 +12,7 @@ Execute SQL queries directly against the underlying datasource (database or data
 ## Usage
 
 ```bash
-python lib/client.py run-sql --sql "SELECT * FROM schema.actual_table LIMIT 10"
+cdq-run-sql --sql "SELECT * FROM schema.actual_table LIMIT 10"
 ```
 
 ## Alternative (curl)
@@ -31,25 +31,32 @@ curl -sk -X POST "${DQ_URL}/v2/getsqlresult?sql=SELECT%201&cxn=${DQ_CXN}" \
 
 ## Parameters
 
-| Parameter | Required | Description |
-|-----------|----------|-------------|
-| `--sql` | Yes | SQL query string (use actual schema.table) |
-| `--connection` | No | Datasource connection name (default: $DQ_CXN) |
+| Parameter | Required | Default | Description |
+|-----------|----------|---------|-------------|
+| `--sql` | Yes | - | SQL query string (use actual schema.table) |
+| `--connection` | No | $DQ_CXN | Datasource connection name (optional) |
+
+## Usage
+
+```bash
+cdq-run-sql --sql "SELECT * FROM schema.table LIMIT 10"
+cdq-run-sql --sql "SELECT COUNT(*) FROM schema.table" --connection MY_CONNECTION
+```
 
 ## Examples
 
 ```bash
 # Simple query on actual table
-python lib/client.py run-sql --sql "SELECT * FROM my_schema.my_table LIMIT 10"
+cdq-run-sql --sql "SELECT * FROM my_schema.my_table LIMIT 10"
 
 # Query with specific connection
-python lib/client.py run-sql --sql "SELECT COUNT(*) FROM schema.table" --connection SNOWFLAKE
+cdq-run-sql --sql "SELECT COUNT(*) FROM schema.table" --connection SNOWFLAKE
 
 # Query BigQuery (use actual project.dataset.table)
-python lib/client.py run-sql --sql "SELECT * FROM myproject.mydataset.mytable LIMIT 100"
+cdq-run-sql --sql "SELECT * FROM myproject.mydataset.mytable LIMIT 100"
 
 # Test query before creating a dataset
-python lib/client.py run-sql --sql "SELECT * FROM raw.customers WHERE active = true"
+cdq-run-sql --sql "SELECT * FROM raw.customers WHERE active = true"
 
 # Use this SQL to then create a dataset via run-dq-job
 ```
