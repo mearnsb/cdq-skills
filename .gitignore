@@ -138,3 +138,6 @@ scripts/
 
 # Session lock files
 .claude/scheduled_tasks.lock
+
+# Internal workflow docs (skill authoring notes, not user-facing)
+docs/
