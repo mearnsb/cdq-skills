@@ -5,72 +5,41 @@ description: Complete workflow for exploring a dataset - search catalog, identif
 
 # CDQ Workflow: Explore Dataset
 
-Explore a dataset to identify its structure, columns, and sample data with safe limits.
+> **TL;DR:** Safely explore a table before running DQ jobs. Always use LIMIT on exploratory queries.
+>
+> All SQL here uses **physical table names** (e.g., `samples.orders`). See [lib/NAMING.md](../lib/NAMING.md).
 
-> **Default limits:** LIMIT 5 for sample data, LIMIT 1 for counts. User must explicitly override for larger datasets.
-
-## Usage
-
-```bash
-# Search catalog for a table
-cdq-search-catalog --query "table_name" --limit 10
-
-# Explore schema + sample (LIMIT 5)
-cdq-run-sql --sql "SELECT * FROM schema.table LIMIT 5"
-
-# Get row count
-cdq-run-sql --sql "SELECT COUNT(*) as cnt FROM schema.table"
-```
-
-## Parameters
-
-| Parameter | Required | Description |
-|-----------|----------|-------------|
-| `--query` | Yes | Search term for catalog |
-| `--limit` | No | Search results limit (default: 10) |
-
-## Exploratory SQL Patterns
-
-Always use limits for exploratory queries:
-
-| Query Type | Default Limit | Override |
-|------------|---------------|----------|
-| Sample data | LIMIT 5 | `--limit 100` |
-| Row count | LIMIT 1 | Not needed |
-| Distinct values | LIMIT 10 | `--limit 50` |
-
-## Examples
+## Steps
 
 ```bash
-# Find a table in the catalog
-cdq-search-catalog --query "nyse"
+# 1. Find the table (searches CDQ catalog for registered datasets)
+cdq search-catalog --query "table_name"
 
-# Identify columns + sample (LIMIT 5)
-cdq-run-sql --sql "SELECT * FROM samples.nyse_categorical LIMIT 5"
+# 2. Browse physical tables in the database
+cdq list-tables --schema samples
 
-# Get total row count
-cdq-run-sql --sql "SELECT COUNT(*) as cnt FROM samples.nyse_categorical"
+# 3. Sample data — ALWAYS use LIMIT 5 for first look
+cdq run-sql --sql "SELECT * FROM samples.my_table LIMIT 5"
 
-# Check for nulls in a column
-cdq-run-sql --sql "SELECT COUNT(*) as total, SUM(CASE WHEN column IS NULL THEN 1 ELSE 0 END) as nulls FROM table LIMIT 1"
+# 4. Row count
+cdq run-sql --sql "SELECT COUNT(*) as cnt FROM samples.my_table"
+
+# 5. Check for nulls in key columns
+cdq run-sql --sql "SELECT COUNT(*) as nulls FROM samples.my_table WHERE email IS NULL"
 ```
 
-## Workflow
+## Safe Limits
 
-```
-1. search-catalog  → Find available datasets
-2. run-sql (LIMIT) → Identify columns and sample data
-3. run-sql (COUNT) → Get row count
-4. run-dq-job      → Run DQ job with appropriate limit
-```
+| Query purpose | Default limit |
+|---------------|--------------|
+| Sample data | `LIMIT 5` |
+| Row count | `LIMIT 1` (aggregate) |
+| Distinct values | `LIMIT 20` |
 
-## Output Interpretation
+Do not remove LIMIT without user confirmation.
 
-- **schema** in results shows column names and metadata
-- **rows** shows actual data with values
-- **rowCount** shows number of rows returned
+## Next Steps After Exploration
 
-## Related
-
-- `cdq-run-dq-job` - Run DQ job after exploration
-- `cdq-workflow-run-complete-job` - Combined explore + run workflow
+- Run a DQ job: `cdq run-dq-job`
+- Suggest rules: invoke `/cdq-workflow-suggest-rules`
+- Save a rule: invoke `/cdq-workflow-save-complete-rule`

@@ -1,91 +1,80 @@
 ---
 name: cdq-run-dq-job
-description: Register a dataset definition and run a Data Quality job in Collibra DQ. Use when: (1) Running a new DQ job on a dataset, (2) Registering a new dataset with a logical name, (3) Re-running a job with updated rules, (4) Processing data with source SQL query.
+description: Register a dataset definition and run a Data Quality job in Collibra DQ. Requires --dataset (logical name you choose) and --sql (query using PHYSICAL table name). Use when: (1) Running a new DQ job on a dataset, (2) Registering a new dataset with a logical name, (3) Re-running a job with updated rules, (4) Processing data with source SQL query.
 ---
 
 # CDQ Run DQ Job
 
-Register a dataset definition and run a Data Quality job.
+> **TL;DR:** Register a dataset with a logical name and run a DQ job on it.
+>
+> **Two names are in play — don't confuse them:**
+> - `--dataset` = **logical name** you choose (e.g., `MY_DATASET`) — used to identify the dataset in CDQ
+> - `--sql` = query using **physical table name** (e.g., `SELECT * FROM samples.orders`) — runs against your actual database
+>
+> See [lib/NAMING.md](../lib/NAMING.md).
 
-> **Dataset Name vs Source SQL:**
-> - `--dataset` is a **logical name** you assign (e.g., `MY_DATASET`, `DEMO_JOB`, `CUSTOMERS_2025`). This is how the dataset will be known in CDQ.
-> - `--sql` contains the **actual source query** that pulls data from your database. Use real `schema.table` names here.
-
-## Usage
+## Command
 
 ```bash
-cdq-run-dq-job \
-  --dataset "MY_DATASET" \
-  --sql "SELECT * FROM actual_schema.actual_table WHERE condition = true" \
-  --run-id "2025-03-09"
+cdq run-dq-job --dataset "MY_DATASET" --sql "SELECT * FROM schema.table LIMIT 100000" [--run-id YYYY-MM-DD] [--connection CXN]
+```
+
+**Help output:**
+```
+usage: cdq run-dq-job [-h] --dataset DATASET [--run-id RUN_ID] --sql SQL
+                      [--connection CONNECTION]
+
+options:
+  -h, --help            show this help message and exit
+  --dataset DATASET     Dataset name
+  --run-id RUN_ID       Run ID (default: today's date)
+  --sql SQL             Source SQL query
+  --connection CONNECTION
+                        Datasource connection name
 ```
 
 ## Parameters
 
-| Parameter | Required | Description |
-|-----------|----------|-------------|
-| `--dataset` | Yes | Logical dataset name (your choice, e.g., `MY_DATASET`) |
-| `--sql` | Yes | Source SQL query (use actual schema.table names) |
-| `--run-id` | No | Run ID/date (default: today's date YYYY-MM-DD) |
-| `--connection` | No | Datasource connection name (default: $DQ_CXN) |
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `--dataset` | required | **Logical name** you assign in CDQ (your choice) |
+| `--sql` | required | Source query using **physical** `schema.table` |
+| `--run-id` | today's date | Run identifier (YYYY-MM-DD) |
+| `--connection` | $DQ_CXN | Datasource connection name |
 
-## Examples
+**Correct vs. incorrect usage:**
+```
+❌ cdq run-dq-job --dataset "samples.orders" --sql "SELECT * FROM samples.orders LIMIT 100000"
+   (WRONG — --dataset should be a logical name you choose, not the physical table)
+
+❌ cdq run-dq-job --dataset "MY_DATASET" --sql "SELECT * FROM MY_DATASET LIMIT 100000"
+   (WRONG — --sql must use physical table name, not the logical dataset name)
+
+✅ cdq run-dq-job --dataset "MY_DATASET" --sql "SELECT * FROM samples.orders LIMIT 100000"
+   (correct — logical name in --dataset, physical table in --sql)
+```
+
+## Example
 
 ```bash
-# Create a dataset with a logical name
-cdq-run-dq-job \
+cdq run-dq-job \
   --dataset "CUSTOMER_ANALYSIS" \
-  --sql "SELECT * FROM raw.customers WHERE active = true" \
-  --run-id "2025-03-09"
-
-# Use a descriptive logical name
-cdq-run-dq-job \
-  --dataset "Q1_SALES_REVIEW" \
-  --sql "SELECT * FROM sales.orders WHERE order_date >= '2025-01-01'"
-
-# Complex source query
-cdq-run-dq-job \
-  --dataset "ENRICHED_CUSTOMERS" \
-  --sql "SELECT c.*, o.total_orders FROM customers c LEFT JOIN (SELECT customer_id, COUNT(*) as total_orders FROM orders GROUP BY customer_id) o ON c.id = o.customer_id"
-
-# Run with specific connection
-cdq-run-dq-job \
-  --dataset "SNOWFLAKE_DATA" \
-  --sql "SELECT * FROM MY_SCHEMA.MY_TABLE" \
-  --connection SNOWFLAKE
+  --sql "SELECT * FROM samples.customers LIMIT 100000"
 ```
+
+## Safety
+
+Default to `LIMIT 100000` in `--sql`. User must explicitly request a larger limit.
+
+## Output
+
+JSON with `registration` (dataset def saved) and `job` (run result). Jobs finish in 1–2 seconds — call `cdq get-results` immediately after.
 
 ## Workflow
 
 ```
-1. run-sql         → Test your source query with actual table names
-2. run-dq-job      → Register dataset with logical name + run job
-3. get-results     → Check the results
-4. save-rule       → Add rules to the dataset (use logical name)
-5. run-dq-job      → Run again to execute new rules
+cdq run-sql     → test your query with physical table
+cdq run-dq-job  → register logical name + run job
+cdq get-results → check score and rule results
+cdq save-rule   → add rules (uses logical name), then re-run
 ```
-
-### Monitoring (after step 2)
-
-CDQ jobs typically finish in 1–2 seconds. After running a job:
-
-1. **Check `get-recent-runs` or `get-results` immediately** — no `sleep N` needed
-2. If the job is still SETUP/RUNNING (rare for CDQ), use `ScheduleWakeup` to check back in a few seconds instead of a static `sleep`
-
-## Output
-
-Returns JSON with:
-- `registration` - Dataset definition registration result
-- `job` - Job execution result
-
-## API Endpoints
-
-1. `PUT /v3/datasetDefs` - Register dataset definition
-2. `POST /v3/jobs/run?dataset=<name>&runDate=<date>` - Run the job
-
-## Notes
-
-- The logical `--dataset` name is how you'll reference this dataset in all other commands
-- Dataset names are unique within CDQ - reusing a name updates the definition
-- Run ID is typically a date and is used to track different executions
-- Profiling is enabled by default on new datasets

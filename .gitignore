@@ -71,6 +71,14 @@ config.local.json
 .azure/
 .gcp/
 
+# Local session/chat scripts (not for repo)
+messages.json
+chat.sh
+loop.sh
+fix.sh
+format_sql.py
+system.md
+
 # Untracked utility scripts (local only)
 generate_sql_join_data.py
 sql_join_queries.sql

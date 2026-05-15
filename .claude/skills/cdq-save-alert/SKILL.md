@@ -1,98 +1,76 @@
 ---
 name: cdq-save-alert
-description: Create a new alert for a dataset in Collibra DQ. Use when: (1) Creating email notifications for DQ score thresholds, (2) Setting up alerts for rule failures, (3) Configuring condition-based notifications, (4) Monitoring specific metrics.
+description: Create a new alert for a dataset in Collibra DQ. Requires --dataset (logical name), --name, --condition, and --email. Use when: (1) Creating email notifications for DQ score thresholds, (2) Setting up alerts for rule failures, (3) Configuring condition-based notifications, (4) Monitoring specific metrics.
 ---
 
 # CDQ Save Alert
 
-Create a new alert that triggers when conditions are met.
+> **TL;DR:** Create an email alert that fires when a DQ condition is met after a job run.
+>
+> `--dataset` takes the **logical dataset name** (e.g., `MY_DATASET`). See [lib/NAMING.md](../lib/NAMING.md).
 
-> **Note:** The `--dataset` parameter uses the **logical dataset name** registered in CDQ (e.g., `MY_DATASET`, `DEMO_JOB`), not necessarily a `schema.table`. Alerts attach to datasets by their logical name.
-
-## Usage
+## Command
 
 ```bash
-cdq-save-alert \
-  --dataset "DATASET_NAME" \
+cdq save-alert \
+  --dataset "MY_DATASET" \
   --name "Alert Name" \
   --condition "score < 90" \
-  --email "team@company.com"
+  --email "team@company.com" \
+  [--message "Custom message"]
 ```
 
-## Alternative (curl)
+**Help output:**
+```
+usage: cdq save-alert [-h] --dataset DATASET --name NAME --condition CONDITION
+                      --email EMAIL [--message MESSAGE]
 
-```bash
-source .env && TOKEN=$(curl -sk -X POST "${DQ_URL}/auth/signin" \
-  -H "Content-Type: application/json" \
-  -d "{\"username\":\"${DQ_USERNAME}\",\"password\":\"${DQ_PASSWORD}\",\"iss\":\"${DQ_ISS}\"}" | jq -r '.token')
-
-curl -sk -X POST "${DQ_URL}/v3/alerts" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "dataset": "DATASET_NAME",
-    "alertNm": "Low Score Alert",
-    "alertCond": "score < 90",
-    "alertFormat": "EMAIL",
-    "alertFormatValue": "team@company.com",
-    "alertMsg": "Low score alert",
-    "active": true
-  }'
+options:
+  -h, --help            show this help message and exit
+  --dataset DATASET     Dataset name
+  --name NAME           Alert name
+  --condition CONDITION
+                        Alert condition
+  --email EMAIL         Email address
+  --message MESSAGE     Alert message
 ```
 
 ## Parameters
 
-| Parameter | Required | Description |
-|-----------|----------|-------------|
-| `--dataset` | Yes | Dataset name (logical name registered in CDQ) |
-| `--name` | Yes | Alert name |
-| `--condition` | Yes | Alert condition expression |
-| `--email` | Yes | Email address for notifications |
-| `--message` | No | Custom alert message |
+| Parameter | Description |
+|-----------|-------------|
+| `--dataset` | **Logical dataset name** in CDQ |
+| `--name` | Alert name |
+| `--condition` | Trigger condition (see below) |
+| `--email` | Notification email address |
+| `--message` | Optional custom message |
 
-## Examples
+**Correct vs. incorrect usage:**
+```
+❌ cdq save-alert --dataset "MY_DATASET" --email "x@y.com"
+   (WRONG — missing required --name and --condition)
 
-```bash
-# Alert on low DQ score
-cdq-save-alert \
-  --dataset "MY_DATASET" \
-  --name "Customer DQ Alert" \
-  --condition "score < 85" \
-  --email "dq-team@company.com"
+❌ cdq save-alert --dataset "samples.orders" --name "a" --condition "score < 90" --email "x@y.com"
+   (WRONG — --dataset must be a logical name, not a physical table)
 
-# Alert on specific rule failure
-cdq-save-alert \
-  --dataset "ORDERS_DATASET" \
-  --name "Order Check Failure" \
-  --condition "rule_failed('Unique Order ID')" \
-  --email "alerts@company.com" \
-  --message "Order uniqueness check failed"
-
-# Alert with custom message
-cdq-save-alert \
-  --dataset "INVENTORY" \
-  --name "Inventory Alert" \
-  --condition "score < 90" \
-  --email "inventory-team@company.com" \
-  --message "Inventory DQ score dropped below threshold"
+✅ cdq save-alert --dataset "MY_DATASET" --name "Low Score" --condition "score < 90" --email "x@y.com"
+   (correct)
 ```
 
 ## Condition Examples
 
-- `score < 90` - Alert when DQ score drops below threshold
-- `rule_failed('Rule Name')` - Alert when specific rule fails
-- `completeness < 95` - Alert on completeness metric
-- `accuracy < 80` - Alert on accuracy metric
+| Condition | Meaning |
+|-----------|---------|
+| `score < 90` | Alert when DQ score drops below 90 |
+| `rule_failed('my_rule')` | Alert when a specific rule fails |
+| `completeness < 95` | Alert on completeness metric |
 
-## Output
+## Example
 
-Returns JSON with created alert details.
-
-## API Endpoint
-
-`POST /v3/alerts`
-
-## Related
-
-- Use `get-alerts` to see existing alerts
-- Alerts trigger after jobs complete - run jobs with `run-dq-job`
+```bash
+cdq save-alert \
+  --dataset "MY_DATASET" \
+  --name "Low Score Alert" \
+  --condition "score < 85" \
+  --email "dq-team@company.com"
+```

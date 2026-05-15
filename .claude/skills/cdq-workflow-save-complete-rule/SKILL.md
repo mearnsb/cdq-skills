@@ -5,129 +5,57 @@ description: Complete rule creation workflow - explore data, confirm schema, the
 
 # CDQ Workflow: Save Complete Rule
 
-Explore a dataset to understand its structure, then save a DQ rule with user confirmation.
+> **TL;DR:** Safely create a rule: explore columns → check existing rules → save rule → verify.
+>
+> **Two names are in play:**
+> - `--dataset` = **logical name** in CDQ (e.g., `MY_DATASET`)
+> - Rule `--sql` = uses **physical** `schema.table` — do NOT use `{dataset}` placeholder (breaks on BigQuery)
+>
+> See [lib/NAMING.md](../lib/NAMING.md).
 
-> **Safety:** Always explore first with LIMIT before saving rules.
-
-## Usage
-
-```bash
-# Run complete workflow: explore, confirm, then save rule
-cdq-run-sql --sql "SELECT * FROM schema.table LIMIT 5"
-cdq-run-sql --sql "SELECT COUNT(*) as cnt FROM schema.table"
-
-# Then save rule (use actual schema.table, no spaces in name)
-cdq-save-rule \
-  --dataset "MY_DATASET" \
-  --name "rule_name" \
-  --sql "SELECT * FROM schema.table WHERE column IS NULL"
-```
-
-## Complete Workflow
+## Steps
 
 ```bash
-# Step 1: Explore data to understand schema (always use LIMIT)
-cdq-run-sql --sql "SELECT * FROM schema.table LIMIT 5"
+# 1. Understand the columns
+cdq run-sql --sql "SELECT * FROM samples.my_table LIMIT 5"
 
-# Step 2: Get row count
-cdq-run-sql --sql "SELECT COUNT(*) as cnt FROM schema.table"
+# 2. Check existing rules to avoid duplicates
+cdq get-rules --dataset "MY_DATASET"
 
-# Step 3: Check existing rules for this dataset
-cdq-get-rules --dataset "MY_DATASET"
+# 3. Test your rule SQL — rows returned = failures
+cdq run-sql --sql "SELECT * FROM samples.my_table WHERE email IS NULL LIMIT 10"
 
-# Step 4: Review column names, sample values, and existing rules
-# Confirm you have the right columns and rule doesn't already exist
-
-# Step 5: Save the rule (only if no similar rule exists)
-# Use actual schema.table, NOT {dataset} placeholder
-cdq-save-rule \
+# 4. Save the rule (only if no similar rule exists)
+cdq save-rule \
   --dataset "MY_DATASET" \
-  --name "no_nulls_email" \
-  --sql "SELECT * FROM schema.table WHERE email IS NULL"
+  --name "email_not_null" \
+  --sql "SELECT * FROM samples.my_table WHERE email IS NULL"
 
-# Step 6: Verify rule was saved
-cdq-get-rules --dataset "MY_DATASET"
+# 5. Verify it was saved
+cdq get-rules --dataset "MY_DATASET"
 ```
-
-## Parameters
-
-| Parameter | Required | Description |
-|-----------|----------|-------------|
-| `--dataset` | Yes | Logical dataset name |
-| `--name` | Yes | Rule name |
-| `--sql` | Yes | Rule SQL (use actual `schema.table`, NOT `{dataset}` placeholder) |
-| `--points` | No | Rule points (default: 1) |
-| `--perc` | No | Percentage threshold (default: 1) |
 
 ## Rule SQL Patterns
 
-Use the actual `schema.table` in your rule SQL (NOT the `{dataset}` placeholder - it may not work with all connections like BigQuery):
+```sql
+-- Not null
+SELECT * FROM samples.my_table WHERE col IS NULL
 
-| Rule Type | Example SQL |
-|-----------|-------------|
-| Not null | `SELECT * FROM schema.table WHERE column IS NULL` |
-| Unique | `SELECT * FROM schema.table GROUP BY column HAVING COUNT(*) > 1` |
-| Valid values | `SELECT * FROM schema.table WHERE column NOT IN ('A', 'B', 'C')` |
-| Format check | `SELECT * FROM schema.table WHERE column NOT LIKE '%@%.%'` |
-| Range check | `SELECT * FROM schema.table WHERE amount < 0 OR amount > 10000` |
+-- Unique
+SELECT col FROM samples.my_table GROUP BY col HAVING COUNT(*) > 1
 
-> **Important:** Always use the actual `schema.table` (e.g., `samples.nyse_categorical`) instead of `{dataset}`. The placeholder syntax is not supported by all datasource connections (e.g., BigQuery returns a syntax error).
+-- Valid values
+SELECT * FROM samples.my_table WHERE status NOT IN ('ACTIVE','INACTIVE')
 
-## Default Limits
+-- Format check (email)
+SELECT * FROM samples.my_table WHERE email NOT LIKE '%@%.%'
 
-| Phase | Default Limit |
-|-------|---------------|
-| Exploratory (sample) | LIMIT 5 |
-| Row count | LIMIT 1 |
-| Rule preview | Shows first 6 failures |
-
-## User Confirmation
-
-Before saving, confirm:
-- [ ] Column names are correct
-- [ ] Data types match your rule logic
-- [ ] Rule SQL syntax is valid
-- [ ] Dataset name is correct
-- [ ] No similar rule already exists (check with `get-rules` first)
-
-## Example
-
-```bash
-# Explore first
-cdq-run-sql --sql "SELECT * FROM customers LIMIT 5"
-
-# Save rule for email validation (use actual schema.table)
-cdq-save-rule \
-  --dataset "CUSTOMER_DATA" \
-  --name "Email Not Null" \
-  --sql "SELECT * FROM schema.table WHERE email IS NULL"
-
-# Check it was saved
-cdq-get-rules --dataset "CUSTOMER_DATA"
+-- Range check
+SELECT * FROM samples.my_table WHERE amount < 0 OR amount > 1000000
 ```
 
-## Avoid Duplicate Rules
+## Before Saving — Confirm
 
-Always check for existing rules before saving a new one:
-
-```bash
-# Check what rules already exist
-cdq-get-rules --dataset "MY_DATASET"
-```
-
-### Duplicate Check Questions:
-- Does a rule with similar logic already exist?
-- Is this rule checking the same column?
-- Is the SQL condition identical or very similar?
-
-If similar rule exists, either:
-1. Use existing rule instead
-2. Modify rule name to be distinct
-3. Skip if redundant
-
-## Related
-
-- `cdq-workflow-explore-dataset` - Explore-only workflow
-- `cdq-workflow-suggest-rules` - Analyze and propose rules
-- `cdq-get-rules` - List rules for a dataset
-- `cdq-save-rule` - Save rule command
+- Column names match actual schema (from step 1)
+- No identical or near-identical rule exists (from step 2)
+- Rule SQL returns expected failures (from step 3)

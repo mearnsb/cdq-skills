@@ -1,53 +1,49 @@
 ---
 name: cdq-get-dataset
-description: Retrieve dataset configuration and metadata from Collibra DQ. Use when: (1) Getting dataset definition details, (2) Finding connection settings, (3) Viewing source query for a dataset, (4) Checking schedule information.
+description: Retrieve dataset configuration and metadata from Collibra DQ. Requires --dataset with the LOGICAL dataset name (not a physical table name). Use when: (1) Getting dataset definition details, (2) Finding connection settings, (3) Viewing source query for a dataset, (4) Checking schedule information.
 ---
 
 # CDQ Get Dataset
 
-Retrieve the configuration/definition for a dataset.
+> **TL;DR:** Retrieve the registered definition for a dataset — connection, source SQL, schedule, and profile settings.
+>
+> `--dataset` takes the **logical dataset name** (e.g., `MY_DATASET` or `CDQ_AUTO_samples.orders`). See [lib/NAMING.md](../lib/NAMING.md).
 
-## Usage
+## Command
 
 ```bash
-cdq-get-dataset --dataset "schema.table"
+cdq get-dataset --dataset "DATASET_NAME"
 ```
 
-## Alternative (curl)
+**Help output:**
+```
+usage: cdq get-dataset [-h] --dataset DATASET
 
-```bash
-source .env && TOKEN=$(curl -sk -X POST "${DQ_URL}/auth/signin" \
-  -H "Content-Type: application/json" \
-  -d "{\"username\":\"${DQ_USERNAME}\",\"password\":\"${DQ_PASSWORD}\",\"iss\":\"${DQ_ISS}\"}" | jq -r '.token')
-
-curl -sk "${DQ_URL}/v2/owl-options/get?dataset=schema.table" \
-  -H "Authorization: Bearer $TOKEN"
+options:
+  -h, --help         show this help message and exit
+  --dataset DATASET  Dataset name
 ```
 
 ## Parameters
 
-| Parameter | Required | Description |
-|-----------|----------|-------------|
-| `--dataset` | Yes | Dataset name |
+| Parameter | Description |
+|-----------|-------------|
+| `--dataset` | **Logical dataset name** registered in CDQ |
 
-## Examples
+**Correct vs. incorrect usage:**
+```
+❌ cdq get-dataset                                  (WRONG — --dataset is required)
+❌ cdq get-dataset "CDQ_AUTO_samples.orders"        (WRONG — must use --dataset flag)
+✅ cdq get-dataset --dataset "CDQ_AUTO_samples.orders"  (correct)
+✅ cdq get-dataset --dataset "MY_DATASET"           (correct)
+```
+
+## Example
 
 ```bash
-# Get dataset definition
-cdq-get-dataset --dataset "samples.nyse_categorical"
-
-# Get definition for specific dataset
-cdq-get-dataset --dataset "my_project.my_dataset.customers"
+cdq get-dataset --dataset "CDQ_AUTO_samples.orders"
 ```
 
 ## Output
 
-Returns JSON with dataset configuration including:
-- Connection settings
-- Source query
-- Schedule information
-- Profile settings
-
-## API Endpoint
-
-`GET /v2/owl-options/get?dataset=<name>`
+JSON with dataset configuration: connection settings, source query, schedule, profile settings.

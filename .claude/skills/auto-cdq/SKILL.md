@@ -60,8 +60,8 @@ Print the progress header:
    - Option 3: "Type specific table" - Enter a table name directly
 
 4. **Based on user choice, execute skill:**
-   - If "Browse all tables": Run `/cdq-list-tables --schema {schema} --limit 20`
-   - If "Search by pattern": Ask for search pattern, then run `/cdq-list-tables --schema {schema} --search {pattern} --limit 20`
+   - If "Browse all tables": Run `cdq list-tables --schema {schema} --limit 20`
+   - If "Search by pattern": Ask for search pattern, then run `cdq list-tables --schema {schema} --search {pattern} --limit 20`
    - If "Type specific table": Ask for table name (store as-is, skip to Phase 3)
 
 5. **Display the skill output** (JSON with list of tables)
@@ -102,7 +102,7 @@ Print the progress header:
 
 3. Print: `Query: SELECT * FROM `{schema}.{table}` LIMIT 5`
 
-4. Execute skill: `/cdq-run-sql --sql "SELECT * FROM \`{schema}.{table}\` LIMIT 5"`
+4. Execute skill: `cdq run-sql --sql "SELECT * FROM \`{schema}.{table}\` LIMIT 5"`
 
 5. **Display results** in readable format:
    - Show column names from schema
@@ -116,7 +116,7 @@ Print the progress header:
    - Option 4: "Chat about this" - Discuss the data
 
 7. **If "Show more rows":**
-   - Re-run: `/cdq-run-sql --sql "SELECT * FROM \`{schema}.{table}\` LIMIT 20"`
+   - Re-run: `cdq run-sql --sql "SELECT * FROM \`{schema}.{table}\` LIMIT 20"`
    - Display results
    - Ask validation question again (loop)
 
@@ -197,9 +197,9 @@ What's next?
 ---
 
 Then ask: "What would you like to do next?"
-- Option 1: "Run DQ job" → `/cdq-run-dq-job --dataset "{dataset_name}" --sql "SELECT * FROM \`{schema}.{table}\` LIMIT 10000"`
+- Option 1: "Run DQ job" → `cdq run-dq-job --dataset "{dataset_name}" --sql "SELECT * FROM \`{schema}.{table}\` LIMIT 10000"`
 - Option 2: "Create rules" → (First run DQ job above, then create rules)
-- Option 3: "Preview more data" → Run another `/cdq-run-sql`
+- Option 3: "Preview more data" → Run another `cdq run-sql`
 - Option 4: "Exit" → End workflow
 
 ---
@@ -215,9 +215,9 @@ QUICK ONBOARDING CHECKLIST
 
 ☐ Step 1: Pick a schema (e.g., "samples")
 ☐ Step 2: Pick a table (e.g., "CollibraEmployees")
-☐ Step 3: Preview data with /cdq-run-sql
-☐ Step 4: Run DQ job with /cdq-run-dq-job
-☐ Step 5: View results with /cdq-get-results
+☐ Step 3: Preview data with cdq run-sql
+☐ Step 4: Run DQ job with cdq run-dq-job
+☐ Step 5: View results with cdq get-results
 ```
 
 Users can work through this checklist manually at their own pace using individual skills.
@@ -271,7 +271,7 @@ Print the progress header:
 
 2. Print: `Phase 2: Data Analysis`
 
-3. Execute skill: `/cdq-workflow-suggest-rules --dataset {dataset}`
+3. Invoke the `/cdq-workflow-suggest-rules` skill with the dataset context
 
 4. **Display the skill output** with rule suggestions:
    ```
@@ -331,7 +331,7 @@ Print the progress header:
 2. Print: `Phase 4: Test & Save Rules`
 
 3. **For each selected rule, execute test:**
-   - Run `/cdq-run-sql --sql "{rule_query_test}"`
+   - Run `cdq run-sql --sql "{rule_query_test}"`
    - Display: "Testing rule X of Y: {rule_name}"
    - Show results: "Found N violations"
 
@@ -342,7 +342,7 @@ Print the progress header:
    - Option 3: "Cancel" - Exit without saving
 
 5. **If approved, save each rule:**
-   - Execute: `/cdq-save-rule --dataset {dataset} --name "{rule_name}" --sql "{rule_sql}"`
+   - Execute: `cdq save-rule --dataset {dataset} --name "{rule_name}" --sql "{rule_sql}"`
    - Display: "Saving rule X of Y... ✓"
 
 6. Update header to mark TEST & SAVE as complete (✓)
@@ -369,9 +369,9 @@ Rules:
 ```
 
 Then ask: "What would you like to do next?"
-- Option 1: "Run DQ job with new rules" → `/cdq-run-dq-job --dataset "{dataset}"`
+- Option 1: "Run DQ job with new rules" → `cdq run-dq-job --dataset "{dataset}"`
 - Option 2: "Create more rules" → Restart Phase 3
-- Option 3: "View results" → `/cdq-get-results --dataset "{dataset}"`
+- Option 3: "View results" → `cdq get-results --dataset "{dataset}"`
 - Option 4: "Exit" → End workflow
 
 ---
@@ -380,7 +380,7 @@ Then ask: "What would you like to do next?"
 
 - **Always show headers** at the start of each phase
 - **Use AskUserQuestion** for all user choices (not prompts in text)
-- **Execute skills** with actual /cdq-* commands for data
+- **Execute skills** with actual `cdq <subcommand>` commands for data
 - **Display results** from skills in readable format
 - **Allow loops** for validation (review, modify, etc.)
 - **Update header** incrementally as phases complete

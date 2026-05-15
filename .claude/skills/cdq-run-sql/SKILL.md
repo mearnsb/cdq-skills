@@ -1,76 +1,63 @@
 ---
 name: cdq-run-sql
-description: Execute SQL queries directly against the underlying datasource in Collibra DQ. Use when: (1) Testing source queries before creating datasets, (2) Exploring table schema and sample data, (3) Running ad-hoc queries for analysis, (4) Getting row counts.
+description: Execute SQL queries directly against the underlying datasource in Collibra DQ. Requires --sql with a PHYSICAL table name (e.g. schema.table) — never use logical CDQ dataset names here. Use when: (1) Testing source queries before creating datasets, (2) Exploring table schema and sample data, (3) Running ad-hoc queries for analysis, (4) Getting row counts.
 ---
 
 # CDQ Run SQL
 
-Execute SQL queries directly against the underlying datasource (database or data warehouse).
+> **TL;DR:** Run SQL directly against your database (not CDQ). Always use **physical table names** (e.g., `samples.orders`) — never CDQ logical dataset names here.
+>
+> See [lib/NAMING.md](../lib/NAMING.md) for the logical vs physical distinction.
 
-> **Important:** This command interacts directly with your database/data warehouse. Use **actual `schema.table` names**, not CDQ logical dataset names. This is the only command that requires strict database object names.
-
-## Usage
+## Command
 
 ```bash
-cdq-run-sql --sql "SELECT * FROM schema.actual_table LIMIT 10"
+cdq run-sql --sql "SELECT * FROM schema.table LIMIT 10" [--connection CXN] | python3 lib/format_sql.py
 ```
 
-## Alternative (curl)
+**Help output:**
+```
+usage: cdq run-sql [-h] --sql SQL [--connection CONNECTION]
 
-```bash
-# First authenticate to get token
-source .env && TOKEN=$(curl -sk -X POST "${DQ_URL}/auth/signin" \
-  -H "Content-Type: application/json" \
-  -d "{\"username\":\"${DQ_USERNAME}\",\"password\":\"${DQ_PASSWORD}\",\"iss\":\"${DQ_ISS}\"}" | jq -r '.token')
-
-# Then run SQL
-curl -sk -X POST "${DQ_URL}/v2/getsqlresult?sql=SELECT%201&cxn=${DQ_CXN}" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json"
+options:
+  -h, --help            show this help message and exit
+  --sql SQL             SQL query string
+  --connection CONNECTION
+                        Datasource connection name
 ```
 
 ## Parameters
 
-| Parameter | Required | Default | Description |
-|-----------|----------|---------|-------------|
-| `--sql` | Yes | - | SQL query string (use actual schema.table) |
-| `--connection` | No | $DQ_CXN | Datasource connection name (optional) |
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `--sql` | required | SQL query — use **physical** `schema.table` names |
+| `--connection` | $DQ_CXN | Datasource connection name |
 
-## Usage
-
-```bash
-cdq-run-sql --sql "SELECT * FROM schema.table LIMIT 10"
-cdq-run-sql --sql "SELECT COUNT(*) FROM schema.table" --connection MY_CONNECTION
+**Correct vs. incorrect usage:**
+```
+❌ cdq run-sql --sql "SELECT * FROM MY_DATASET LIMIT 5"         (WRONG — MY_DATASET is a logical name, not a table)
+❌ cdq run-sql --sql "SELECT * FROM samples.orders"             (WRONG — missing LIMIT, will scan full table)
+✅ cdq run-sql --sql "SELECT * FROM samples.orders LIMIT 5"     (correct)
+✅ cdq run-sql --sql "SELECT COUNT(*) as cnt FROM samples.orders" (correct — aggregate needs no LIMIT)
 ```
 
 ## Examples
 
 ```bash
-# Simple query on actual table
-cdq-run-sql --sql "SELECT * FROM my_schema.my_table LIMIT 10"
+# Sample data (always use LIMIT for exploration)
+cdq run-sql --sql "SELECT * FROM samples.orders LIMIT 5" | python3 lib/format_sql.py
 
-# Query with specific connection
-cdq-run-sql --sql "SELECT COUNT(*) FROM schema.table" --connection SNOWFLAKE
+# Row count
+cdq run-sql --sql "SELECT COUNT(*) as cnt FROM samples.orders" | python3 lib/format_sql.py
 
-# Query BigQuery (use actual project.dataset.table)
-cdq-run-sql --sql "SELECT * FROM myproject.mydataset.mytable LIMIT 100"
-
-# Test query before creating a dataset
-cdq-run-sql --sql "SELECT * FROM raw.customers WHERE active = true"
-
-# Use this SQL to then create a dataset via run-dq-job
+# Check for nulls
+cdq run-sql --sql "SELECT COUNT(*) as nulls FROM samples.orders WHERE email IS NULL" | python3 lib/format_sql.py
 ```
-
-## Workflow Tip
-
-Use `run-sql` to develop and test your source query, then use that same SQL in:
-- `run-dq-job` - To register a dataset with a logical name
-- `save-rule` - To define rules that check for data quality issues
 
 ## Output
 
-Returns JSON with query results including schema and rows.
+Formatted as a markdown table. Raw JSON includes `schema` (column metadata) and `rows` (data values).
 
-## API Endpoint
+## Workflow Tip
 
-`POST /v2/getsqlresult?sql=<query>&cxn=<connection>`
+Use `run-sql` to develop and test your source query, then reuse that SQL in `run-dq-job --sql` and `save-rule --sql`.

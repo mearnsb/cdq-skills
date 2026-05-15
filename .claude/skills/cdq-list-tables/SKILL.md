@@ -1,147 +1,64 @@
 ---
 name: cdq-list-tables
-description: List physical tables in a database connection. Use when: (1) User doesn't know what tables exist, (2) Exploring available tables in a schema, (3) Finding table names before creating datasets, (4) Searching tables by name pattern.
+description: List physical tables in a database connection. All parameters optional. Use when: (1) User doesn't know what tables exist, (2) Exploring available tables in a schema, (3) Finding table names before creating datasets, (4) Searching tables by name pattern.
 ---
 
 # CDQ List Tables
 
-List physical tables available in a database connection by querying INFORMATION_SCHEMA.
+> **TL;DR:** List physical tables in the database (queries INFORMATION_SCHEMA). Returns **physical table names** — use these in SQL queries, not as CDQ dataset names.
 
-> **Note:** This command queries the database's INFORMATION_SCHEMA which requires read-only access. If you cannot query these tables, you won't be able to use this skill.
->
-> **Alternative:** If INFORMATION_SCHEMA is not accessible, you can add table reference lists to your project's CLAUDE.md or a dedicated markdown file (e.g., `docs/tables.md`). Include table names, schemas, and descriptions so Claude can help you find tables without needing API access.
-
-> **Architecture Note:** This skill uses a thin wrapper pattern. The implementation is in the project's root `lib/client.py`. The `cdq-list-tables/lib/client.py` file is just a wrapper that redirects to the main client. Always use `cdq-list-tables` or invoke via the skill system.
-
-## Usage
+## Command
 
 ```bash
-cdq-list-tables
-cdq-list-tables --schema samples
-cdq-list-tables --search account
-cdq-list-tables --limit 20
+cdq list-tables [--schema SCHEMA] [--search PATTERN] [--limit N] [--connection CXN]
+```
+
+**Help output:**
+```
+usage: cdq list-tables [-h] [--schema SCHEMA] [--search SEARCH]
+                       [--limit LIMIT] [--connection CONNECTION]
+
+options:
+  -h, --help            show this help message and exit
+  --schema SCHEMA       Schema/dataset name (e.g., samples)
+  --search SEARCH       Filter tables by name substring
+  --limit LIMIT         Max tables to return (default: 20)
+  --connection CONNECTION
+                        Datasource connection name
 ```
 
 ## Parameters
 
-| Parameter | Required | Default | Description |
-|-----------|----------|---------|-------------|
-| `--schema` | No | Uses DQ_CXN default | Database schema/dataset to list tables from |
-| `--search` | No | None | Filter using SQL LIKE syntax (case-insensitive). Use `d%` for prefix, `%text%` for substring (default) |
-| `--limit` | No | 20 | Maximum number of tables to return (starts small for readability) |
-| `--connection` | No | $DQ_CXN | Datasource connection name |
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `--schema` | $DQ_CXN default | Database schema/dataset to list |
+| `--search` | none | Filter by name substring (`account` matches `%account%`) |
+| `--limit` | 20 | Max tables to return |
+| `--connection` | $DQ_CXN | Datasource connection name |
+
+**Correct vs. incorrect usage:**
+```
+❌ cdq list-tables --dataset MY_DATASET    (WRONG — no --dataset flag exists)
+❌ cdq list-tables --table orders          (WRONG — no --table flag exists)
+✅ cdq list-tables --schema samples        (correct)
+✅ cdq list-tables --search account        (correct — searches all schemas)
+✅ cdq list-tables                         (correct — uses default schema)
+```
 
 ## Examples
 
 ```bash
-# List first 20 tables in default schema
-cdq-list-tables
+# List tables in a schema
+cdq list-tables --schema samples
 
-# List tables in a specific schema (BigQuery dataset)
-cdq-list-tables --schema samples
-
-# Search for tables containing "account" in name (LIKE %account%)
-cdq-list-tables --search account
-
-# Find tables starting with 'd' (LIKE d%)
-cdq-list-tables --search "d%"
-
-# Get more results (up to 100)
-cdq-list-tables --limit 100
-
-# Combine schema search and limit
-cdq-list-tables --schema my_dataset --limit 50
-
-# Search with a connection
-cdq-list-tables --schema samples --connection BQ_CONNECTION
-```
-
-## Database-Specific Syntax
-
-This skill adapts the query based on the database type:
-
-### BigQuery
-```sql
-SELECT table_name FROM `<project>.<schema>.INFORMATION_SCHEMA.TABLES`
-WHERE table_type = 'BASE TABLE'
-ORDER BY table_name
-```
-
-### PostgreSQL/MySQL
-```sql
-SELECT table_name FROM INFORMATION_SCHEMA.TABLES
-WHERE table_schema = '<schema>'
-AND table_type = 'BASE TABLE'
-ORDER BY table_name
-```
-
-### Snowflake
-```sql
-SELECT table_name FROM INFORMATION_SCHEMA.TABLES
-WHERE table_schema = '<schema>'
-AND table_type = 'BASE TABLE'
-ORDER BY table_name
+# Search for tables with "account" in the name
+cdq list-tables --search account --limit 50
 ```
 
 ## Output
 
-Returns a JSON array of table names, sorted alphabetically with limit applied.
-
 ```json
-{
-  "tables": ["accounts", "customers", "orders", ...],
-  "count": 20,
-  "schema": "samples",
-  "total_available": "Run without --limit to see all"
-}
+{"tables": ["accounts", "customers", "orders"], "count": 3, "schema": "samples"}
 ```
 
-## API Endpoint
-
-`POST /v2/getsqlresult?sql=<query>&cxn=<connection>`
-
-## Limitations
-
-- Requires read-only access to INFORMATION_SCHEMA tables
-- Default limit is 20 for readability - increase with --limit flag
-- Schema must exist and be accessible to the connection user
-- If INFORMATION_SCHEMA queries fail, user may need to check credentials/permissions
-- **Search uses SQL LIKE syntax**: `account` becomes `%account%` (substring), `d%` becomes `%d%` (prefix), `%text` becomes `%text` (suffix)
-
-## Troubleshooting
-
-If you get an error about INFORMATION_SCHEMA not found:
-- Check that the schema name is correct
-- Verify your connection has access to that schema
-- Try a different schema or check with your DBA
-
-If no tables appear:
-- The schema may be empty
-- Try removing --limit to see if there are tables
-- Check the schema name is correct (case-sensitive for some databases)
-
-## Alternative: Manual Table Reference Lists
-
-If INFORMATION_SCHEMA is not accessible (no read permissions, restricted database, etc.), you can create a manual reference:
-
-### In your project's CLAUDE.md:
-```
-# Table Reference
-- samples.accounts - User account data
-- samples.orders - Order history
-- samples.customers - Customer profiles
-```
-
-### Or a dedicated doc like docs/tables.md:
-```markdown
-# Database Tables
-
-## samples schema
-| Table | Description |
-|-------|-------------|
-| accounts | User financial accounts |
-| orders | Transaction orders |
-| customers | Customer master data |
-```
-
-This allows Claude to help you find tables even without direct database access.
+> **Note:** If INFORMATION_SCHEMA is inaccessible, ask the user to provide a list of tables in CLAUDE.md or a `docs/tables.md` file.

@@ -1,58 +1,59 @@
 ---
 name: cdq-get-results
-description: Retrieve DQ job results (hoot results) including scores and rule outcomes. Use when: (1) Getting DQ score for a completed job, (2) Viewing per-rule results, (3) Checking pass/fail counts, (4) Examining finding details.
+description: Retrieve DQ job results including scores and rule outcomes. Requires --dataset (logical name) and --run-id (get from cdq get-recent-runs). Use when: (1) Getting DQ score for a completed job, (2) Viewing per-rule results, (3) Checking pass/fail counts, (4) Examining finding details.
 ---
 
 # CDQ Get Results
 
-Retrieve the results of a DQ job run (hoot results).
+> **TL;DR:** Get the full DQ results for a completed job run.
+>
+> `--dataset` takes the **logical dataset name**. Get `--run-id` from `cdq get-recent-runs`. See [lib/NAMING.md](../lib/NAMING.md).
 
-## Usage
+## Command
 
 ```bash
-cdq-get-results --dataset "schema.table" --run-id "2025-03-09"
+cdq get-results --dataset "DATASET_NAME" --run-id "YYYY-MM-DD"
 ```
 
-## Alternative (curl)
+**Help output:**
+```
+usage: cdq get-results [-h] --dataset DATASET --run-id RUN_ID
 
-```bash
-source .env && TOKEN=$(curl -sk -X POST "${DQ_URL}/auth/signin" \
-  -H "Content-Type: application/json" \
-  -d "{\"username\":\"${DQ_USERNAME}\",\"password\":\"${DQ_PASSWORD}\",\"iss\":\"${DQ_ISS}\"}" | jq -r '.token')
-
-curl -sk "${DQ_URL}/v2/gethoot?dataset=schema.table&runId=2025-03-09" \
-  -H "Authorization: Bearer $TOKEN"
+options:
+  -h, --help         show this help message and exit
+  --dataset DATASET  Dataset name
+  --run-id RUN_ID    Run ID
 ```
 
 ## Parameters
 
-| Parameter | Required | Description |
-|-----------|----------|-------------|
-| `--dataset` | Yes | Dataset name |
-| `--run-id` | Yes | Run ID (typically a date like 2025-03-09) |
+| Parameter | Description |
+|-----------|-------------|
+| `--dataset` | **Logical dataset name** registered in CDQ |
+| `--run-id` | Run ID from `cdq get-recent-runs` (date like `2026-05-14`) |
 
-## Examples
+**Correct vs. incorrect usage:**
+```
+❌ cdq get-results --dataset "MY_DATASET"                           (WRONG — missing --run-id)
+❌ cdq get-results --dataset "MY_DATASET" --run-id "2026-05-14T00:00:00.000+0000"  (WRONG — use date only)
+✅ cdq get-results --dataset "MY_DATASET" --run-id "2026-05-14"    (correct)
+```
+
+> **run-id format:** Use the date portion only (e.g., `2026-05-14`), not the full ISO timestamp. Run `cdq get-recent-runs` to find valid run IDs.
+
+## Example
 
 ```bash
-# Get results for specific run
-cdq-get-results --dataset "samples.nyse_categorical" --run-id "2025-03-09"
-
-# Get results for today's run
-cdq-get-results --dataset "my_dataset.customers" --run-id "$(date +%Y-%m-%d)"
+cdq get-results --dataset "MY_DATASET" --run-id "2026-05-14"
 ```
 
 ## Output
 
-Returns JSON with detailed DQ results including:
-- Overall score
-- Per-rule results
-- Pass/fail counts
-- Finding details
+JSON with overall score, per-rule results, pass/fail counts, and finding details.
 
-## API Endpoint
+## Workflow
 
-`GET /v2/gethoot?dataset=<name>&runId=<date>`
-
-## Related
-
-- `cdq-get-recent-runs` - Find recent run IDs
+```
+cdq get-recent-runs          → find run IDs
+cdq get-results --run-id ... → get full results
+```

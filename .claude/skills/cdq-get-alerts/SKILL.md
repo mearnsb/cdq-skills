@@ -1,58 +1,48 @@
 ---
 name: cdq-get-alerts
-description: Retrieve alerts configured for a dataset in Collibra DQ. Use when: (1) Viewing existing alerts for a dataset, (2) Checking alert conditions and notification settings, (3) Finding active/inactive alerts.
+description: Retrieve alerts configured for a dataset in Collibra DQ. Requires --dataset with the LOGICAL dataset name (not a physical table name). Use when: (1) Viewing existing alerts for a dataset, (2) Checking alert conditions and notification settings, (3) Finding active/inactive alerts.
 ---
 
 # CDQ Get Alerts
 
-Retrieve alerts configured for a specific dataset.
+> **TL;DR:** List alerts attached to a dataset.
+>
+> `--dataset` takes the **logical dataset name** (e.g., `MY_DATASET`). See [lib/NAMING.md](../lib/NAMING.md).
 
-> **Note:** The `--dataset` parameter uses the **logical dataset name** registered in CDQ (e.g., `MY_DATASET`, `DEMO_JOB`), not necessarily a `schema.table`.
-
-## Usage
+## Command
 
 ```bash
-cdq-get-alerts --dataset "DATASET_NAME"
+cdq get-alerts --dataset "DATASET_NAME"
 ```
 
-## Alternative (curl)
+**Help output:**
+```
+usage: cdq get-alerts [-h] --dataset DATASET
 
-```bash
-source .env && TOKEN=$(curl -sk -X POST "${DQ_URL}/auth/signin" \
-  -H "Content-Type: application/json" \
-  -d "{\"username\":\"${DQ_USERNAME}\",\"password\":\"${DQ_PASSWORD}\",\"iss\":\"${DQ_ISS}\"}" | jq -r '.token')
-
-curl -sk "${DQ_URL}/v2/getalerts?dataset=DATASET_NAME" \
-  -H "Authorization: Bearer $TOKEN"
+options:
+  -h, --help         show this help message and exit
+  --dataset DATASET  Dataset name
 ```
 
 ## Parameters
 
-| Parameter | Required | Description |
-|-----------|----------|-------------|
-| `--dataset` | Yes | Dataset name (logical name) |
+| Parameter | Description |
+|-----------|-------------|
+| `--dataset` | **Logical dataset name** registered in CDQ |
 
-## Examples
+**Correct vs. incorrect usage:**
+```
+❌ cdq get-alerts                          (WRONG — --dataset is required)
+❌ cdq get-alerts "MY_DATASET"             (WRONG — must use --dataset flag)
+✅ cdq get-alerts --dataset "MY_DATASET"   (correct)
+```
+
+## Example
 
 ```bash
-# Get all alerts for a dataset
-cdq-get-alerts --dataset "MY_DATASET"
-
-# Get alerts using schema-like name
-cdq-get-alerts --dataset "samples.nyse_categorical"
-
-# Find dataset names via search-catalog
-cdq-search-catalog --query "" --limit 50
+cdq get-alerts --dataset "MY_DATASET"
 ```
 
 ## Output
 
-Returns JSON array of alerts including:
-- Alert name
-- Condition expression
-- Email/notification settings
-- Active status
-
-## API Endpoint
-
-`GET /v2/getalerts?dataset=<name>`
+JSON array of alerts with name, condition expression, email, and active status.

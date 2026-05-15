@@ -1,61 +1,53 @@
 ---
 name: cdq-get-jobs
-description: List queued and running DQ jobs in the Collibra DQ platform. Use when: (1) Checking the status of DQ jobs, (2) Finding pending/running jobs, (3) Monitoring job queue, (4) Getting run IDs for recent jobs.
+description: List queued and running DQ jobs in the Collibra DQ platform. All parameters optional. Use when: (1) Checking the status of DQ jobs, (2) Finding pending/running jobs, (3) Monitoring job queue. For completed run IDs, use cdq-get-recent-runs instead.
 ---
 
 # CDQ Get Jobs
 
-List DQ jobs currently in the queue.
+> **TL;DR:** Check the job queue for running or pending jobs. CDQ jobs finish in 1–2 seconds — check immediately after `run-dq-job`.
 
-## Usage
+## Command
 
 ```bash
-cdq-get-jobs
-cdq-get-jobs --status "running" --limit 20
+cdq get-jobs [--status STATUS] [--limit N]
 ```
 
-## Alternative (curl)
+**Help output:**
+```
+usage: cdq get-jobs [-h] [--status STATUS] [--limit LIMIT]
 
-```bash
-source .env && TOKEN=$(curl -sk -X POST "${DQ_URL}/auth/signin" \
-  -H "Content-Type: application/json" \
-  -d "{\"username\":\"${DQ_USERNAME}\",\"password\":\"${DQ_PASSWORD}\",\"iss\":\"${DQ_ISS}\"}" | jq -r '.token')
-
-curl -sk "${DQ_URL}/v2/getowlcheckq?limit=10" \
-  -H "Authorization: Bearer $TOKEN"
+options:
+  -h, --help       show this help message and exit
+  --status STATUS  Filter by status
+  --limit LIMIT    Max results
 ```
 
 ## Parameters
 
-| Parameter | Required | Description |
-|-----------|----------|-------------|
-| `--status` | No | Filter by status (empty for all) |
-| `--limit` | No | Maximum results (default: 10) |
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `--status` | all | Filter: `running`, `setup`, `finished`, `failed` |
+| `--limit` | 10 | Max results |
+
+**Correct vs. incorrect usage:**
+```
+❌ cdq get-jobs --dataset "MY_DATASET"    (WRONG — no --dataset flag exists)
+✅ cdq get-jobs                           (correct — lists all recent jobs)
+✅ cdq get-jobs --status running          (correct)
+✅ cdq get-jobs --limit 20               (correct)
+```
 
 ## Examples
 
 ```bash
-# List all jobs in queue
-cdq-get-jobs
+# Check all recent jobs
+cdq get-jobs --limit 20
 
-# List running jobs
-cdq-get-jobs --status "running"
-
-# List recent jobs
-cdq-get-jobs --limit 50
+# Check for running jobs
+cdq get-jobs --status running
 ```
 
 ## Output
 
-Returns JSON with job information including:
-- Dataset name
-- Run ID
-- Status (pending, running, completed, failed)
-
-## API Endpoint
-
-`GET /v2/getowlcheckq`
-
-## Related
-
-- `cdq-get-recent-runs` - Get recently completed runs
+JSON array of jobs with dataset name, run ID, and status. Use `cdq get-recent-runs` if you need completed run IDs.
