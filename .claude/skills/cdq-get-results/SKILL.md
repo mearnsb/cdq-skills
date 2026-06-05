@@ -5,9 +5,7 @@ description: Retrieve DQ job results including scores and rule outcomes. Require
 
 # CDQ Get Results
 
-> **TL;DR:** Get the full DQ results for a completed job run.
->
-> `--dataset` takes the **logical dataset name**. Get `--run-id` from `cdq get-recent-runs`. See [lib/NAMING.md](../lib/NAMING.md).
+> **TL;DR:** Get the full DQ results for a completed job run. `--dataset` = logical name, `--run-id` = date from `cdq get-recent-runs`.
 
 ## Command
 
@@ -15,45 +13,9 @@ description: Retrieve DQ job results including scores and rule outcomes. Require
 cdq get-results --dataset "DATASET_NAME" --run-id "YYYY-MM-DD"
 ```
 
-**Help output:**
-```
-usage: cdq get-results [-h] --dataset DATASET --run-id RUN_ID
+❌ `--run-id "2026-05-14T00:00:00.000+0000"` — use the date portion only.  
+✅ `--run-id "2026-05-14"`
 
-options:
-  -h, --help         show this help message and exit
-  --dataset DATASET  Dataset name
-  --run-id RUN_ID    Run ID
-```
+## Done
 
-## Parameters
-
-| Parameter | Description |
-|-----------|-------------|
-| `--dataset` | **Logical dataset name** registered in CDQ |
-| `--run-id` | Run ID from `cdq get-recent-runs` (date like `2026-05-14`) |
-
-**Correct vs. incorrect usage:**
-```
-❌ cdq get-results --dataset "MY_DATASET"                           (WRONG — missing --run-id)
-❌ cdq get-results --dataset "MY_DATASET" --run-id "2026-05-14T00:00:00.000+0000"  (WRONG — use date only)
-✅ cdq get-results --dataset "MY_DATASET" --run-id "2026-05-14"    (correct)
-```
-
-> **run-id format:** Use the date portion only (e.g., `2026-05-14`), not the full ISO timestamp. Run `cdq get-recent-runs` to find valid run IDs.
-
-## Example
-
-```bash
-cdq get-results --dataset "MY_DATASET" --run-id "2026-05-14"
-```
-
-## Output
-
-JSON with overall score, per-rule results, pass/fail counts, and finding details.
-
-## Workflow
-
-```
-cdq get-recent-runs          → find run IDs
-cdq get-results --run-id ... → get full results
-```
+Run the command, report the results, and stop.

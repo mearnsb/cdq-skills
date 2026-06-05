@@ -5,7 +5,7 @@ description: Search registered datasets in the Collibra DQ catalog. Requires --q
 
 # CDQ Search Catalog
 
-> **TL;DR:** Search **registered datasets** in CDQ (logical names like `MY_DATASET` or `CDQ_AUTO_samples.orders`). Use this to discover what exists before running jobs or saving rules.
+> **TL;DR:** Search registered CDQ datasets (logical names). Use `""` to list all. Results are logical names — use them in `--dataset` for other commands.
 
 ## Command
 
@@ -13,49 +13,9 @@ description: Search registered datasets in the Collibra DQ catalog. Requires --q
 cdq search-catalog --query "search_term" [--limit N] [--connection CXN]
 ```
 
-**Help output:**
-```
-usage: cdq search-catalog [-h] --query QUERY [--limit LIMIT]
-                          [--connection CONNECTION]
+❌ `cdq search-catalog "customer"` — must use `--query` flag.  
+✅ `cdq search-catalog --query "" --limit 100` — lists all datasets.
 
-options:
-  -h, --help            show this help message and exit
-  --query QUERY         Search query
-  --limit LIMIT         Max results
-  --connection CONNECTION
-                        Datasource connection name
-```
+## Done
 
-## Parameters
-
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `--query` | required | Search term — use `""` for all datasets |
-| `--limit` | 50 | Max results |
-| `--connection` | $DQ_CXN | Filter by connection |
-
-**Correct vs. incorrect usage:**
-```
-❌ cdq search-catalog                          (WRONG — --query is required)
-❌ cdq search-catalog "customer"               (WRONG — must use --query flag)
-✅ cdq search-catalog --query "customer"       (correct)
-✅ cdq search-catalog --query "" --limit 100   (correct — list all datasets)
-```
-
-## Examples
-
-```bash
-# List all registered datasets
-cdq search-catalog --query "" --limit 100
-
-# Find datasets matching "customer"
-cdq search-catalog --query "customer"
-```
-
-## Output
-
-Returns `dataAssetList` array. Key fields per dataset:
-- `dataset` — logical dataset name (use this in `--dataset` for other skills)
-- `ruleCnt` / `alertCnt` — rules and alerts attached
-- `lastRun` — last job run timestamp
-- `connectionName` — source connection
+Run the command, report the results, and stop.

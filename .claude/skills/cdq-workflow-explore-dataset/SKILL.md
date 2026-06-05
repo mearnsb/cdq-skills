@@ -5,41 +5,22 @@ description: Complete workflow for exploring a dataset - search catalog, identif
 
 # CDQ Workflow: Explore Dataset
 
-> **TL;DR:** Safely explore a table before running DQ jobs. Always use LIMIT on exploratory queries.
->
-> All SQL here uses **physical table names** (e.g., `samples.orders`). See [lib/NAMING.md](../lib/NAMING.md).
+> **TL;DR:** Safely explore a physical table. All SQL uses physical table names (e.g. `samples.orders`). Always LIMIT exploratory queries.
 
 ## Steps
 
 ```bash
-# 1. Find the table (searches CDQ catalog for registered datasets)
+# 1. Check if dataset is already registered in CDQ
 cdq search-catalog --query "table_name"
 
-# 2. Browse physical tables in the database
+# 2. Find physical tables if needed
 cdq list-tables --schema samples
 
-# 3. Sample data — ALWAYS use LIMIT 5 for first look
+# 3. Sample data — LIMIT 5 for first look
 cdq run-sql --sql "SELECT * FROM samples.my_table LIMIT 5"
 
 # 4. Row count
 cdq run-sql --sql "SELECT COUNT(*) as cnt FROM samples.my_table"
-
-# 5. Check for nulls in key columns
-cdq run-sql --sql "SELECT COUNT(*) as nulls FROM samples.my_table WHERE email IS NULL"
 ```
 
-## Safe Limits
-
-| Query purpose | Default limit |
-|---------------|--------------|
-| Sample data | `LIMIT 5` |
-| Row count | `LIMIT 1` (aggregate) |
-| Distinct values | `LIMIT 20` |
-
-Do not remove LIMIT without user confirmation.
-
-## Next Steps After Exploration
-
-- Run a DQ job: `cdq run-dq-job`
-- Suggest rules: invoke `/cdq-workflow-suggest-rules`
-- Save a rule: invoke `/cdq-workflow-save-complete-rule`
+After each step, stop and wait for results before proceeding to the next. Only continue to the next step if it's needed.

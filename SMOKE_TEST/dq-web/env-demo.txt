@@ -1,0 +1,59 @@
+# DQ Web Environment - Reference copy from original smoke test setup
+# Source: brianmearns162/dq-web:2024.07.1-ABDGCSHILMH-4202
+# Pass via: docker run --env-file=env-demo.txt
+
+# Version
+#OWL_VERSION=2024.11.1-ABDGCSHILM-4213
+OWL_VERSION=2024.07.1-ABDGCSHILMH-4202
+
+# License
+# LICENSE_KEY=<replace-with-your-license>
+
+# Metastore (change accordingly for your postgres instance)
+SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
+SPRING_DATASOURCE_URL=jdbc:postgresql://host.docker.internal:5432/postgres
+SPRING_DATASOURCE_USERNAME=postgres
+SPRING_DATASOURCE_PASSWORD=password
+
+# Multi-tenant
+MULTITENANTMODE=TRUE
+LEGACY_INTEGRATION=FALSE
+multiTenantSchemaHub=owlhub
+
+# AI (Mounted Volume Path /tmp/scratch for key, optional — comment when not using AI functionality)
+#GAI_VERTEX_KEY=/tmp/scratch/ai.json
+#GAI_VERTEX_LOCATION=us-central1
+#GAI_VERTEX_PROJECTID=your-project-id
+
+# SSL (Mounted Volume Path /tmp/scratch for jks, optional — comment this section when SERVER_HTTP_ENABLED=TRUE)
+SERVER_HTTP_ENABLED=TRUE
+#SERVER_HTTPS_ENABLED=TRUE
+#SERVER_SSL_KEY_STORE=/tmp/scratch/keystore.jks
+#SERVER_REQUIRE_SSL=TRUE
+#SERVER_SSL_KEY_TYPE=PKCS12
+#SERVER_SSL_KEY_PASS=<keystore-password>
+#SERVER_SSL_KEY_ALIAS=<keystore-alias>
+
+# Connection Pool
+SPRING_DATASOURCE_POOL_MAX_WAIT=10000
+SPRING_DATASOURCE_POOL_MAX_SIZE=30
+SPRING_DATASOURCE_POOL_INITIAL_SIZE=5
+SPRING_DATASOURCE_POOL_MAX_IDLE=10
+SPRING_DATASOURCE_TOMCAT_MAXIDLE=10
+SPRING_DATASOURCE_TOMCAT_MAXACTIVE=20
+SPRING_DATASOURCE_TOMCAT_MAXWAIT=10000
+SPRING_DATASOURCE_TOMCAT_INITIALSIZE=5
+
+# Misc Defaults
+JAVA_OPTS=-Xms1g -Xmx5g
+SPARK_SUBMIT_MODE=native
+INSTALL_PATH=/opt/owl
+SPARK_HOME=/opt/spark
+OWL_BASE=/opt
+PACKAGE_MANAGER=apt
+INSTALL_INTERACTIVE="DEBIAN_FRONTEND=noninteractive"
+EXTRA_JVM_OPTIONS=-Djava.system.class.loader=com.owl.web.config.DQClassLoader
+SPRING_FLYWAY_ENABLED=false
+
+# Disable Agent
+DISABLENOAGENT=true

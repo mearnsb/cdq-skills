@@ -2,12 +2,20 @@
 """
 Fake Data Generator using Faker library.
 Generates realistic fake data for testing, demos, and development.
+
+Usage:
+  python3 generate_fake_data.py -p user
+  python3 generate_fake_data.py -p customer -n 100 -o /tmp/data.csv
+  python3 generate_fake_data.py first_name last_name email -n 50 --null-pct 10
+  python3 generate_fake_data.py -p sales -n 50 --format json
 """
+import json
 import pandas as pd
 from faker import Faker
 import argparse
 import os
 import sys
+import random
 
 fake = Faker()
 
@@ -36,7 +44,7 @@ FIELDS = {
     "job": lambda: fake.job(),
     "job_female": lambda: fake.job_female(),
     "job_male": lambda: fake.job_male(),
-    
+
     # === Address & Location ===
     "street_address": lambda: fake.street_address(),
     "street_name": lambda: fake.street_name(),
@@ -56,7 +64,7 @@ FIELDS = {
     "coordinate": lambda: str(fake.coordinate()),
     "locale": lambda: fake.locale(),
     "timezone": lambda: fake.timezone(),
-    
+
     # === Company & Work ===
     "company": lambda: fake.company(),
     "company_name": lambda: fake.company(),
@@ -69,7 +77,7 @@ FIELDS = {
     "domain": lambda: fake.domain_name(),
     "domain_word": lambda: fake.domain_word(),
     "tld": lambda: fake.tld(),
-    
+
     # === Financial ===
     "credit_card_number": lambda: fake.credit_card_number(),
     "credit_card": lambda: fake.credit_card_number(),
@@ -91,7 +99,17 @@ FIELDS = {
     "currency_symbol": lambda: fake.currency_symbol(),
     "pricetag": lambda: fake.pricetag(),
     "credit_card_full": lambda: fake.credit_card_full(),
-    
+    "amount": lambda: round(random.uniform(1.0, 9999.99), 2),
+    "price": lambda: round(random.uniform(0.99, 999.99), 2),
+    "quantity": lambda: random.randint(1, 100),
+    "tax_id": lambda: fake.ein(),
+    "invoice_number": lambda: f"INV-{fake.random_int(min=10000, max=99999)}",
+    "transaction_id": lambda: f"TXN-{fake.uuid4().split('-')[0].upper()}",
+    "account_number": lambda: str(fake.random_int(min=10000000, max=99999999)),
+    "routing_number": lambda: str(fake.random_int(min=100000000, max=999999999)),
+    "credit_limit": lambda: round(random.uniform(500.0, 50000.0), 2),
+    "balance": lambda: round(random.uniform(-1000.0, 25000.0), 2),
+
     # === Security & Tech ===
     "username": lambda: fake.user_name(),
     "password": lambda: fake.password(),
@@ -99,7 +117,6 @@ FIELDS = {
     "sha1": lambda: fake.sha1(),
     "sha256": lambda: fake.sha256(),
     "uuid": lambda: str(fake.uuid4()),
-    "uuid4": lambda: str(fake.uuid4()),
     "ipv4": lambda: fake.ipv4(),
     "ipv4_public": lambda: fake.ipv4_public(),
     "ipv4_private": lambda: fake.ipv4_private(),
@@ -115,7 +132,7 @@ FIELDS = {
     "file_path": lambda: fake.file_path(),
     "mime_type": lambda: fake.mime_type(),
     "port_number": lambda: fake.port_number(),
-    
+
     # === Dates & Time ===
     "date": lambda: str(fake.date()),
     "datetime": lambda: str(fake.date_time()),
@@ -133,7 +150,7 @@ FIELDS = {
     "future_date": lambda: str(fake.future_date()),
     "past_datetime": lambda: str(fake.past_datetime()),
     "future_datetime": lambda: str(fake.future_datetime()),
-    
+
     # === Text & Content ===
     "sentence": lambda: fake.sentence(),
     "sentences": lambda: fake.sentences(),
@@ -142,13 +159,11 @@ FIELDS = {
     "text": lambda: fake.text(),
     "word": lambda: fake.word(),
     "words": lambda: fake.words(),
-    "catch_phrase": lambda: fake.catch_phrase(),
-    "bs": lambda: fake.bs(),
     "hex_color": lambda: fake.hex_color(),
     "color_name": lambda: fake.color_name(),
     "rgb_color": lambda: fake.rgb_color(),
     "emoji": lambda: fake.emoji(),
-    
+
     # === Internet ===
     "user_agent": lambda: fake.user_agent(),
     "chrome": lambda: fake.chrome(),
@@ -160,12 +175,11 @@ FIELDS = {
     "ios_platform_token": lambda: fake.ios_platform_token(),
     "linux_platform_token": lambda: fake.linux_platform_token(),
     "windows_platform_token": lambda: fake.windows_platform_token(),
-    
+
     # === Miscellaneous ===
     "boolean": lambda: fake.boolean(),
     "null_boolean": lambda: fake.null_boolean(),
     "binary": lambda: str(fake.binary()),
-    "uuid4": lambda: str(fake.uuid4()),
     "isbn10": lambda: fake.isbn10(),
     "isbn13": lambda: fake.isbn13(),
     "ean": lambda: fake.ean(),
@@ -175,7 +189,6 @@ FIELDS = {
     "license_plate": lambda: fake.license_plate(),
     "profile": lambda: str(fake.profile()),
     "simple_profile": lambda: str(fake.simple_profile()),
-    "license_plate": lambda: fake.license_plate(),
 }
 
 # Preset configurations
@@ -205,51 +218,54 @@ PRESETS = {
         "fields": ["credit_card_number", "card_provider", "card_expiry", "card_cvv", "bank", "iban", "bban", "currency", "swift"]
     },
     "security": {
-        "description": "Security/authentication",
+        "description": "Security/authentication data",
         "fields": ["username", "password", "email", "md5", "sha256", "uuid", "ipv4", "ipv6", "mac_address", "hostname"]
     },
-    "address_full": {
-        "description": "Complete address",
-        "fields": ["street_address", "street_name", "building_number", "secondary_address", "city", "city_prefix", "city_suffix", "state", "state_abbr", "zipcode", "postcode", "country", "country_code", "latitude", "longitude"]
-    },
     "personal": {
-        "description": "Personal identity",
+        "description": "Personal identity data",
         "fields": ["first_name", "last_name", "full_name", "email", "safe_email", "phone", "ssn", "date_of_birth", "job", "company"]
     },
     "ecommerce": {
-        "description": "E-commerce order",
-        "fields": ["order_id", "customer_id", "product_name", "quantity", "price", "credit_card_number", "street_address", "city", "state_abbr", "zipcode", "date"]
+        "description": "E-commerce order data",
+        "fields": ["first_name", "last_name", "email", "quantity", "price", "credit_card", "street_address", "city", "state_abbr", "zipcode", "date"]
     },
     "healthcare": {
-        "description": "Healthcare/patient",
-        "fields": ["patient_id", "full_name", "date_of_birth", "ssn", "insurance_provider", "street_address", "city", "state_abbr", "zipcode", "phone"]
+        "description": "Healthcare/patient data",
+        "fields": ["full_name", "date_of_birth", "ssn", "phone", "street_address", "city", "state_abbr", "zipcode", "email"]
+    },
+    "sales": {
+        "description": "Sales/transaction data",
+        "fields": ["transaction_id", "full_name", "email", "amount", "price", "quantity", "company", "invoice_number", "date", "country"]
     },
 }
 
-# Add more preset-friendly aliases
-PRESETS["address"] = PRESETS["address_full"]
 
-def generate(fields, rows=10, seed=None):
+def generate(fields, rows=10, seed=None, null_pct=0):
     """Generate fake data for specified fields."""
     if seed:
         fake.seed_instance(seed)
-    
-    # Clean field names
+
     clean_fields = [f for f in fields if f in FIELDS]
     unknown = [f for f in fields if f not in FIELDS]
     if unknown:
         print(f"Warning: Unknown fields: {unknown}", file=sys.stderr)
-    
+
     if not clean_fields:
         print("Error: No valid fields specified", file=sys.stderr)
         sys.exit(1)
-    
+
     data = []
     for _ in range(rows):
-        row = {f: FIELDS[f]() for f in clean_fields}
+        row = {}
+        for f in clean_fields:
+            if null_pct > 0 and random.random() * 100 < null_pct:
+                row[f] = None
+            else:
+                row[f] = FIELDS[f]()
         data.append(row)
-    
+
     return pd.DataFrame(data)
+
 
 def main():
     parser = argparse.ArgumentParser(
@@ -262,70 +278,67 @@ Examples:
   %(prog)s -p customer -n 100 -o ~/fake_customers.csv
   %(prog)s first_name last_name email job -n 50
   %(prog)s -p user -n 1000 -s 42 -o test.csv
+  %(prog)s -p user -n 20 --null-pct 10
+  %(prog)s -p sales -n 5 --format json
         """
     )
     parser.add_argument("-n", "--rows", type=int, default=10, help="Number of rows (default: 10)")
-    parser.add_argument("-o", "--output", type=str, help="Output CSV path")
-    parser.add_argument("-S", "--save", action="store_true", help="Save to default data/csv location for spark-sql")
+    parser.add_argument("-o", "--output", type=str, help="Output CSV file path")
     parser.add_argument("-s", "--seed", type=int, help="Random seed for reproducibility")
     parser.add_argument("-l", "--list", action="store_true", help="List available fields and presets")
-    parser.add_argument("-p", "--preset", type=str, help="Use a preset (user, customer, employee, address, company, financial, security, personal, ecommerce, healthcare)")
-    parser.add_argument("-v", "--verbose", action="store_true", help="Show preset descriptions")
+    parser.add_argument("-p", "--preset", type=str, help="Use a preset (user, customer, employee, address, company, financial, security, personal, ecommerce, healthcare, sales)")
+    parser.add_argument("-v", "--verbose", action="store_true", help="Show preset descriptions with --list")
+    parser.add_argument("--null-pct", type=float, default=0, help="Percentage chance each field is null (0-100)")
+    parser.add_argument("--format", choices=["csv", "json"], default="csv", help="Output format (csv or json)")
     parser.add_argument("fields", nargs="*", help="Fields to generate")
-    
+
     args = parser.parse_args()
-    
+
     if args.list:
-        print("=== Available Fields ({} total) ===".format(len(FIELDS)))
+        print(f"=== Available Fields ({len(FIELDS)} total) ===")
         for f in sorted(FIELDS):
             print(f"  {f}")
         print("\n=== Presets ===")
         for p, info in PRESETS.items():
-            fields = ", ".join(info["fields"][:5]) + ("..." if len(info["fields"]) > 5 else "")
+            fields_str = ", ".join(info["fields"][:5])
+            if len(info["fields"]) > 5:
+                fields_str += "..."
             if args.verbose:
                 print(f"  {p}:")
                 print(f"    Description: {info['description']}")
-                print(f"    Fields: {fields}")
+                print(f"    Fields: {fields_str}")
             else:
-                print(f"  {p} ({info['description']}): {fields}")
+                print(f"  {p} ({info['description']}): {fields_str}")
         return
-    
+
     # Determine fields
     if args.preset:
         if args.preset not in PRESETS:
             print(f"Unknown preset: {args.preset}")
-            print("Available presets: " + ", ".join(PRESETS.keys()))
+            print("Available presets: " + ", ".join(PRESETS.keys()), file=sys.stderr)
             sys.exit(1)
         fields = PRESETS[args.preset]["fields"]
     elif args.fields:
         fields = args.fields
     else:
-        fields = PRESETS["user"]["fields"]  # Default
-    
+        fields = PRESETS["user"]["fields"]
+
     # Generate
-    df = generate(fields, args.rows, args.seed)
-    
+    df = generate(fields, args.rows, args.seed, args.null_pct)
+
     # Output
-    default_output = os.path.expanduser("~/.openclaw/workspace/data/csv/fake_data.csv")
-    
-    # Determine output: explicit -o flag, -S flag for default location, or stdout
     if args.output:
-        output_path = args.output
-        save_file = True
-    elif args.save:
-        output_path = default_output
-        save_file = True
-    else:
-        save_file = False
-    
-    if save_file:
-        dir_path = os.path.dirname(output_path)
-        if dir_path:
-            os.makedirs(dir_path, exist_ok=True)
-        df.to_csv(output_path, index=False)
-        print(f"✓ Saved {len(df)} rows to {output_path}")
+        os.makedirs(os.path.dirname(args.output) or ".", exist_ok=True)
+        if args.format == "json":
+            df.to_json(args.output, orient="records", indent=2)
+        else:
+            df.to_csv(args.output, index=False)
+        print(f"Saved {len(df)} rows to {args.output}")
+    elif args.format == "json":
+        print(json.dumps(json.loads(df.to_json(orient="records")), indent=2))
     else:
         print(df.to_string())
+
 
 if __name__ == "__main__":
     main()

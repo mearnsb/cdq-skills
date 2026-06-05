@@ -13,29 +13,8 @@ description: Test connection to the Collibra DQ API. Takes NO arguments — do n
 cdq test-connection
 ```
 
-> ⚠️ **NO FLAGS** — this command takes zero arguments. Do not add any flags. Adding any flag will cause an error.
+⚠️ **NO FLAGS** — adding any flag will cause an error.
 
-**Correct vs. incorrect usage:**
-```
-❌ cdq test-connection --url http://...   (WRONG — will error)
-❌ cdq test-connection --user admin       (WRONG — will error)
-✅ cdq test-connection                    (correct)
-```
+## Done
 
-**Help output (no flags exist):**
-```
-usage: cdq test-connection [-h]
-
-options:
-  -h, --help  show this help message and exit
-```
-
-Reads `DQ_URL`, `DQ_USERNAME`, `DQ_PASSWORD`, `DQ_ISS` from `.env`.
-
-## Output
-
-```json
-{"success": true, "message": "Connection successful"}
-```
-
-On failure: returns `success: false` with an error message — check your `.env` values.
+Run the command, report the result, and stop.

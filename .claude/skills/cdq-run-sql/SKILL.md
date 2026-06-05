@@ -5,59 +5,19 @@ description: Execute SQL queries directly against the underlying datasource in C
 
 # CDQ Run SQL
 
-> **TL;DR:** Run SQL directly against your database (not CDQ). Always use **physical table names** (e.g., `samples.orders`) — never CDQ logical dataset names here.
->
-> See [lib/NAMING.md](../lib/NAMING.md) for the logical vs physical distinction.
+> **TL;DR:** Run SQL directly against your database. Always use **physical table names** (e.g., `samples.orders`) — never CDQ logical dataset names.
 
 ## Command
 
 ```bash
-cdq run-sql --sql "SELECT * FROM schema.table LIMIT 10" [--connection CXN] | python3 lib/format_sql.py
+cdq run-sql --sql "SELECT * FROM samples.table LIMIT 10" [--connection CXN]
 ```
 
-**Help output:**
-```
-usage: cdq run-sql [-h] --sql SQL [--connection CONNECTION]
+❌ `SELECT * FROM MY_DATASET` — logical names are not physical tables.  
+❌ `SELECT * FROM samples.orders` without LIMIT — always add LIMIT for exploration.  
+❌ `DESCRIBE samples.table` / `SHOW TABLES` — only SELECT statements are accepted.  
+✅ `SELECT COUNT(*) FROM samples.orders` — aggregates don't need LIMIT.
 
-options:
-  -h, --help            show this help message and exit
-  --sql SQL             SQL query string
-  --connection CONNECTION
-                        Datasource connection name
-```
+## Done
 
-## Parameters
-
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `--sql` | required | SQL query — use **physical** `schema.table` names |
-| `--connection` | $DQ_CXN | Datasource connection name |
-
-**Correct vs. incorrect usage:**
-```
-❌ cdq run-sql --sql "SELECT * FROM MY_DATASET LIMIT 5"         (WRONG — MY_DATASET is a logical name, not a table)
-❌ cdq run-sql --sql "SELECT * FROM samples.orders"             (WRONG — missing LIMIT, will scan full table)
-✅ cdq run-sql --sql "SELECT * FROM samples.orders LIMIT 5"     (correct)
-✅ cdq run-sql --sql "SELECT COUNT(*) as cnt FROM samples.orders" (correct — aggregate needs no LIMIT)
-```
-
-## Examples
-
-```bash
-# Sample data (always use LIMIT for exploration)
-cdq run-sql --sql "SELECT * FROM samples.orders LIMIT 5" | python3 lib/format_sql.py
-
-# Row count
-cdq run-sql --sql "SELECT COUNT(*) as cnt FROM samples.orders" | python3 lib/format_sql.py
-
-# Check for nulls
-cdq run-sql --sql "SELECT COUNT(*) as nulls FROM samples.orders WHERE email IS NULL" | python3 lib/format_sql.py
-```
-
-## Output
-
-Formatted as a markdown table. Raw JSON includes `schema` (column metadata) and `rows` (data values).
-
-## Workflow Tip
-
-Use `run-sql` to develop and test your source query, then reuse that SQL in `run-dq-job --sql` and `save-rule --sql`.
+Run the query, report the results, and stop. Do not call `list-tables` or any other command unless the user asks.

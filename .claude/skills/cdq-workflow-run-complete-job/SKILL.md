@@ -5,47 +5,27 @@ description: Complete DQ job workflow - explore first with limits, run job, chec
 
 # CDQ Workflow: Run Complete Job
 
-> **TL;DR:** Full cycle: explore → run job → get results. Default to `LIMIT 100000` for jobs.
+> **TL;DR:** Full cycle: explore → run job → get results.
 >
-> **Two names are in play — don't confuse them:**
-> - `--dataset` in `run-dq-job` / `get-results` = **logical name** you choose in CDQ
-> - SQL queries in `run-sql` and `--sql` = use **physical** `schema.table`
->
-> See [lib/NAMING.md](../lib/NAMING.md).
+> - `--dataset` = logical name you choose (e.g. `MY_DATASET`)
+> - `--sql` = physical table (e.g. `SELECT * FROM samples.orders`)
 
 ## Steps
 
 ```bash
-# 1. Explore the physical table (LIMIT 5)
+# 1. Explore (LIMIT 5)
 cdq run-sql --sql "SELECT * FROM samples.my_table LIMIT 5"
-cdq run-sql --sql "SELECT COUNT(*) as cnt FROM samples.my_table"
 
-# 2. Run DQ job (logical name + physical SQL)
-cdq run-dq-job \
-  --dataset "MY_DATASET" \
-  --sql "SELECT * FROM samples.my_table LIMIT 100000"
+# 2. Run DQ job (default LIMIT 100000)
+cdq run-dq-job --dataset "MY_DATASET" --sql "SELECT * FROM samples.my_table LIMIT 100000"
 
-# 3. Get results immediately (CDQ jobs finish in 1–2 seconds)
-cdq get-results --dataset "MY_DATASET" --run-id "2026-05-14"
+# 3. Get results immediately — jobs finish in 1–2 seconds
+cdq get-results --dataset "MY_DATASET" --run-id "YYYY-MM-DD"
 ```
 
-## Results Key Fields
-
-| Field | Description |
-|-------|-------------|
-| `score` | DQ score 0–100 |
-| `passFail` | 1 = passed, 0 = failed |
-| `rows` | Rows processed |
-| `activeRules` | Rules evaluated |
-
-## Adding Rules After the First Run
-
+To add rules and re-run:
 ```bash
-cdq save-rule \
-  --dataset "MY_DATASET" \
-  --name "email_not_null" \
-  --sql "SELECT * FROM samples.my_table WHERE email IS NULL"
-
-# Re-run to apply the new rule
+cdq save-rule --dataset "MY_DATASET" --name "rule_name" --sql "SELECT * FROM samples.my_table WHERE col IS NULL"
 cdq run-dq-job --dataset "MY_DATASET" --sql "SELECT * FROM samples.my_table LIMIT 100000"
+cdq get-results --dataset "MY_DATASET" --run-id "YYYY-MM-DD"
 ```

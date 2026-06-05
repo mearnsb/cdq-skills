@@ -10,44 +10,11 @@ description: List queued and running DQ jobs in the Collibra DQ platform. All pa
 ## Command
 
 ```bash
-cdq get-jobs [--status STATUS] [--limit N]
+cdq get-jobs [--status running|setup|finished|failed] [--limit N]
 ```
 
-**Help output:**
-```
-usage: cdq get-jobs [-h] [--status STATUS] [--limit LIMIT]
+❌ `cdq get-jobs --dataset "MY_DATASET"` — no `--dataset` flag exists.
 
-options:
-  -h, --help       show this help message and exit
-  --status STATUS  Filter by status
-  --limit LIMIT    Max results
-```
+## Done
 
-## Parameters
-
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `--status` | all | Filter: `running`, `setup`, `finished`, `failed` |
-| `--limit` | 10 | Max results |
-
-**Correct vs. incorrect usage:**
-```
-❌ cdq get-jobs --dataset "MY_DATASET"    (WRONG — no --dataset flag exists)
-✅ cdq get-jobs                           (correct — lists all recent jobs)
-✅ cdq get-jobs --status running          (correct)
-✅ cdq get-jobs --limit 20               (correct)
-```
-
-## Examples
-
-```bash
-# Check all recent jobs
-cdq get-jobs --limit 20
-
-# Check for running jobs
-cdq get-jobs --status running
-```
-
-## Output
-
-JSON array of jobs with dataset name, run ID, and status. Use `cdq get-recent-runs` if you need completed run IDs.
+Run the command, report the results, and stop. For completed run IDs use `cdq get-recent-runs` instead.

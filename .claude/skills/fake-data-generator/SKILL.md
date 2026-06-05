@@ -1,6 +1,6 @@
 ---
 name: fake-data-generator
-description: Generate realistic fake data for testing, demos, and development using the Faker library. Supports 142+ field types across personal, customer, company, financial, and healthcare categories with CSV export.
+description: Generate realistic fake data for testing, demos, and development using the Faker library. Supports 150+ field types across personal, customer, company, financial, and healthcare categories with CSV/JSON export, null injection, and seed-based reproducibility.
 ---
 
 # Fake Data Generator Skill
@@ -49,10 +49,14 @@ Generate fake customer data
 
 ### With Options
 
-Specify rows and save to CSV:
+Specify rows, null percentage, JSON output, and save to CSV:
 
 ```
-Generate 100 rows of fake user profile data and save to /tmp/users.csv
+Generate 100 rows of fake user profile data with 10% nulls and save to /tmp/users.csv
+```
+
+```
+Generate 50 rows of fake sales data in JSON format and save to /tmp/sales.json
 ```
 
 ### Available Data Categories
@@ -148,6 +152,7 @@ Generate 100 rows of fake user profile data and save to /tmp/users.csv
 
 **Sales / CRM:**
 - customer_id, account_number, deal_value, probability, close_date, lead_source, sales_rep, territory
+- **Preset:** `sales` - transaction_id, full_name, email, amount, price, quantity, company, invoice_number, date, country
 
 **E-commerce:**
 - order_id, product_sku, product_name, price, quantity, shipping_address, tracking_number, transaction_id
@@ -161,247 +166,68 @@ Generate 100 rows of fake user profile data and save to /tmp/users.csv
 ## Implementation
 
 ```python
-import pandas as pd
-from faker import Faker
-import argparse
-import os
-
-fake = Faker()
-
-# Define field mappings
-FIELD_MAP = {
-    # Personal
-    "first_name": fake.first_name,
-    "last_name": fake.last_name,
-    "full_name": fake.name,
-    "email": fake.email,
-    "safe_email": fake.safe_email,
-    "phone": fake.phone_number,
-    "ssn": fake.ssn,
-    "date_of_birth": lambda: fake.date_of_birth(minimum_age=18, maximum_age=80),
-    "job": fake.job,
-    
-    # Address
-    "street_address": fake.street_address,
-    "city": fake.city,
-    "state": fake.state,
-    "state_abbr": fake.state_abbr,
-    "zipcode": fake.zipcode,
-    "country": fake.country,
-    "latitude": fake.latitude,
-    "longitude": fake.longitude,
-    
-    # Company
-    "company_name": fake.company,
-    "company_email": fake.company_email,
-    "company_suffix": fake.company_suffix,
-    
-    # Financial
-    "credit_card": fake.credit_card_number,
-    "card_provider": fake.credit_card_provider,
-    "card_expiry": fake.credit_card_expire,
-    "card_cvv": fake.credit_card_security_code,
-    "bank": fake.bank,
-    "iban": fake.iban,
-    "currency": fake.currency,
-    "pricetag": fake.pricetag,
-    
-    # Security
-    "username": fake.user_name,
-    "password": fake.password,
-    "md5": fake.md5,
-    "sha256": fake.sha256,
-    "uuid": fake.uuid4,
-    "ipv4": fake.ipv4,
-    "ipv6": fake.ipv6,
-    "mac_address": fake.mac_address,
-    "hostname": fake.hostname,
-    "domain": fake.domain_name,
-    "url": fake.url,
-    
-    # Dates
-    "date": fake.date,
-    "datetime": fake.date_time,
-    "time": fake.time,
-    "timezone": fake.timezone,
-    "year": fake.year,
-    "month": fake.month_name,
-    "day_of_week": fake.day_of_week,
-    
-    # Text
-    "sentence": fake.sentence,
-    "paragraph": fake.paragraph,
-    "text": fake.text,
-    "word": fake.word,
-    "catch_phrase": fake.catch_phrase,
-    "bs": fake.bs,
-}
-
-def generate_fake_data(fields, num_rows=10, seed=None):
-    """Generate fake data for specified fields."""
-    if seed:
-        Faker.seed(seed)
-    
-    items = []
-    for _ in range(num_rows):
-        row = {}
-        for field in fields:
-            if field in FIELD_MAP:
-                row[field] = FIELD_MAP[field]()
-            else:
-                row[field] = f"unknown_field_{field}"
-        items.append(row)
-    
-    return pd.DataFrame(items)
-
-def save_to_csv(df, path):
-    """Save DataFrame to CSV."""
-    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
-    df.to_csv(path, index=False)
-    return path
-
-# Example usage
-if __name__ == "__main__":
-    fields = ["first_name", "last_name", "email", "phone", "company_name", "job"]
-    df = generate_fake_data(fields, num_rows=100)
-    save_to_csv(df, "fake_data.csv")
-    print(df.head())
-```
-
-## CLI Script
-
-Save as `scripts/generate_fake_data.py`:
-
-```bash
-#!/usr/bin/env python3
+import json
 import pandas as pd
 from faker import Faker
 import argparse
 import os
 import sys
+import random
 
 fake = Faker()
 
-# Field mappings
 FIELDS = {
-    # Identity
     "first_name": lambda: fake.first_name(),
     "last_name": lambda: fake.last_name(),
-    "full_name": lambda: fake.name(),
     "email": lambda: fake.email(),
-    "safe_email": lambda: fake.safe_email(),
     "phone": lambda: fake.phone_number(),
     "ssn": lambda: fake.ssn(),
+    "date_of_birth": lambda: str(fake.date_of_birth(minimum_age=18, maximum_age=80)),
     "job": lambda: fake.job(),
-    # Address
-    "street_address": lambda: fake.street_address(),
-    "city": lambda: fake.city(),
-    "state": lambda: fake.state(),
-    "state_abbr": lambda: fake.state_abbr(),
-    "zipcode": lambda: fake.zipcode(),
-    "country": lambda: fake.country(),
-    "latitude": lambda: fake.latitude(),
-    "longitude": lambda: fake.longitude(),
-    # Company
-    "company": lambda: fake.company(),
-    "company_email": lambda: fake.company_email(),
-    # Financial
-    "credit_card": lambda: fake.credit_card_number(),
-    "card_provider": lambda: fake.credit_card_provider(),
-    "card_expiry": lambda: fake.credit_card_expire(),
-    "bank": lambda: fake.bank(),
-    "iban": lambda: fake.iban(),
-    "currency": lambda: fake.currency(),
-    # Security
-    "username": lambda: fake.user_name(),
-    "password": lambda: fake.password(),
-    "md5": lambda: fake.md5(),
-    "sha256": lambda: fake.sha256(),
-    "uuid": lambda: str(fake.uuid4()),
-    "ipv4": lambda: fake.ipv4(),
-    "ipv6": lambda: fake.ipv6(),
-    "mac_address": lambda: fake.mac_address(),
-    "hostname": lambda: fake.hostname(),
-    "domain": lambda: fake.domain_name(),
-    "url": lambda: fake.url(),
-    # Dates
-    "date": lambda: str(fake.date()),
-    "datetime": lambda: str(fake.date_time()),
-    "time": lambda: fake.time(),
-    "timezone": lambda: fake.timezone(),
-    # Text
-    "sentence": lambda: fake.sentence(),
-    "paragraph": lambda: fake.paragraph(),
-    "catch_phrase": lambda: fake.catch_phrase(),
-    "bs": lambda: fake.bs(),
+    # ... 150+ fields total (address, company, financial, security, dates, text, internet)
 }
 
 PRESETS = {
-    "user": ["first_name", "last_name", "email", "phone", "street_address", "city", "state_abbr", "zipcode"],
-    "customer": ["first_name", "last_name", "email", "phone", "company", "job"],
-    "employee": ["full_name", "email", "job", "company", "phone", "ssn"],
-    "address": ["street_address", "city", "state", "state_abbr", "zipcode", "country"],
-    "company": ["company", "company_email", "domain", "url", "catch_phrase"],
-    "financial": ["credit_card", "card_provider", "card_expiry", "bank", "iban", "currency"],
-    "security": ["username", "password", "md5", "sha256", "uuid", "ipv4", "mac_address"],
+    "user": {"Description": "Basic user profile", "fields": ["first_name", "last_name", "email", "phone", ...]},
+    "customer": {"Description": "Customer/CRM data", "fields": [...]},
+    "sales": {"Description": "Sales/transaction data", "fields": [...]},
+    # ... 11 presets total
 }
 
-def generate(fields, rows=10, seed=None):
+def generate(fields, rows=10, seed=None, null_pct=0):
+    """Generate fake data with optional null injection."""
     if seed:
         fake.seed_instance(seed)
-    
     data = []
     for _ in range(rows):
-        row = {f: FIELDS[f]() for f in fields if f in FIELDS}
+        row = {}
+        for f in fields:
+            if null_pct > 0 and random.random() * 100 < null_pct:
+                row[f] = None
+            else:
+                row[f] = FIELDS[f]()
         data.append(row)
-    
     return pd.DataFrame(data)
 
-def main():
-    parser = argparse.ArgumentParser(description="Generate fake data with Faker")
-    parser.add_argument("-n", "--rows", type=int, default=10, help="Number of rows")
-    parser.add_argument("-o", "--output", type=str, help="Output CSV path")
-    parser.add_argument("-s", "--seed", type=int, help="Random seed")
-    parser.add_argument("-l", "--list", action="store_true", help="List available fields and presets")
-    parser.add_argument("-p", "--preset", type=str, help="Use a preset (user, customer, employee, address, company, financial, security)")
-    parser.add_argument("fields", nargs="*", help="Fields to generate")
-    
-    args = parser.parse_args()
-    
-    if args.list:
-        print("=== Available Fields ===")
-        for f in sorted(FIELDS):
-            print(f"  {f}")
-        print("\n=== Presets ===")
-        for p, f in PRESETS.items():
-            print(f"  {p}: {', '.join(f)}")
-        return
-    
-    # Determine fields
-    if args.preset:
-        if args.preset not in PRESETS:
-            print(f"Unknown preset: {args.preset}")
-            sys.exit(1)
-        fields = PRESETS[args.preset]
-    elif args.fields:
-        fields = args.fields
-    else:
-        fields = PRESETS["user"]  # Default
-    
-    # Generate
-    df = generate(fields, args.rows, args.seed)
-    
-    # Output
-    if args.output:
-        os.makedirs(os.path.dirname(args.output) or ".", exist_ok=True)
-        df.to_csv(args.output, index=False)
-        print(f"Saved {len(df)} rows to {args.output}")
-    else:
-        print(df.to_string())
-
-if __name__ == "__main__":
-    main()
+# CLI with --null-pct, --format json, -p preset, custom fields, seed support
 ```
+
+## CLI Script
+
+See `scripts/generate_fake_data.py` for the full implementation (150+ fields, 11 presets).
+
+### CLI Options
+
+| Flag | Description |
+|------|-------------|
+| `-n`, `--rows` | Number of rows (default: 10) |
+| `-o`, `--output` | Output file path |
+| `-s`, `--seed` | Random seed for reproducibility |
+| `-p`, `--preset` | Use a preset: user, customer, employee, address, company, financial, security, personal, ecommerce, healthcare, sales |
+| `-l`, `--list` | List all available fields and presets |
+| `-v`, `--verbose` | Show preset descriptions |
+| `--null-pct` | Percentage chance each field is null (0-100) |
+| `--format` | Output format: csv (default) or json |
 
 ## Examples
 
@@ -420,6 +246,15 @@ python3 generate_fake_data.py first_name last_name email job company -n 50
 
 # With seed for reproducibility
 python3 generate_fake_data.py -p user -n 100 -s 42 -o test.csv
+
+# With 15% null values (realistic missing data)
+python3 generate_fake_data.py -p user -n 20 --null-pct 15 -o /tmp/users_with_nulls.csv
+
+# JSON output
+python3 generate_fake_data.py -p sales -n 5 --format json
+
+# Save as JSON
+python3 generate_fake_data.py -p customer -n 10 -o /tmp/customers.json --format json
 ```
 
 ## Integration with Spark SQL

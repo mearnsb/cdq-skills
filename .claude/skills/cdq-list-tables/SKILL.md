@@ -5,7 +5,7 @@ description: List physical tables in a database connection. All parameters optio
 
 # CDQ List Tables
 
-> **TL;DR:** List physical tables in the database (queries INFORMATION_SCHEMA). Returns **physical table names** — use these in SQL queries, not as CDQ dataset names.
+> **TL;DR:** List physical tables in the database. Results are physical table names — use them in SQL queries, not as CDQ dataset names.
 
 ## Command
 
@@ -13,52 +13,18 @@ description: List physical tables in a database connection. All parameters optio
 cdq list-tables [--schema SCHEMA] [--search PATTERN] [--limit N] [--connection CXN]
 ```
 
-**Help output:**
-```
-usage: cdq list-tables [-h] [--schema SCHEMA] [--search SEARCH]
-                       [--limit LIMIT] [--connection CONNECTION]
+❌ `cdq list-tables --dataset MY_DATASET` — no `--dataset` flag exists.
 
-options:
-  -h, --help            show this help message and exit
-  --schema SCHEMA       Schema/dataset name (e.g., samples)
-  --search SEARCH       Filter tables by name substring
-  --limit LIMIT         Max tables to return (default: 20)
-  --connection CONNECTION
-                        Datasource connection name
-```
+### Search Pattern Syntax
 
-## Parameters
+The `--search` parameter uses **SQL LIKE patterns** with `%` as the wildcard character:
 
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `--schema` | $DQ_CXN default | Database schema/dataset to list |
-| `--search` | none | Filter by name substring (`account` matches `%account%`) |
-| `--limit` | 20 | Max tables to return |
-| `--connection` | $DQ_CXN | Datasource connection name |
+- `--search "f%"` finds tables starting with "f" (e.g., `fact_sales`, `files`)
+- `--search "%data"` finds tables ending with "data"
+- `--search "%user%"` finds tables containing "user" anywhere
 
-**Correct vs. incorrect usage:**
-```
-❌ cdq list-tables --dataset MY_DATASET    (WRONG — no --dataset flag exists)
-❌ cdq list-tables --table orders          (WRONG — no --table flag exists)
-✅ cdq list-tables --schema samples        (correct)
-✅ cdq list-tables --search account        (correct — searches all schemas)
-✅ cdq list-tables                         (correct — uses default schema)
-```
+*Common mistake:* Using glob patterns like `f*` (with `*`) will not work — always use `%` as the wildcard.
 
-## Examples
+## Done
 
-```bash
-# List tables in a schema
-cdq list-tables --schema samples
-
-# Search for tables with "account" in the name
-cdq list-tables --search account --limit 50
-```
-
-## Output
-
-```json
-{"tables": ["accounts", "customers", "orders"], "count": 3, "schema": "samples"}
-```
-
-> **Note:** If INFORMATION_SCHEMA is inaccessible, ask the user to provide a list of tables in CLAUDE.md or a `docs/tables.md` file.
+Run the command, report the results, and stop. Do not call `run-sql` or explore further unless the user asks.

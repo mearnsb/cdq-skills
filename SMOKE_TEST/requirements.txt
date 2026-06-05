@@ -1,0 +1,2 @@
+duckdb>=1.0
+postgrest>=0.16

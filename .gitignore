@@ -86,6 +86,11 @@ sql_joins_notebook.py
 
 # Local test data (CSV files)
 data/
+.csv/
+
+# Database dumps (may contain auth tokens)
+dq_schemas_dump.sql
+db-init/
 
 # Archived skills (kept for reference, not active)
 .claude/skills/archive/
@@ -141,3 +146,35 @@ scripts/
 
 # Internal workflow docs (skill authoring notes, not user-facing)
 docs/
+
+# Disabled skills
+.claude/skills/auto-cdq.disabled/
+
+# One-off scripts and session artifacts (not for public repo)
+advanced_rules.py
+bank_marketing_rules.md
+benchmark_100k.py
+extract_tool.py
+generate_rules.py
+suggestions.md
+test_suite.sh
+ITERATION_GUIDE.md
+
+# Load test / benchmark scripts with hardcoded keys and exposed endpoints
+vllm_load_test.py
+vllm_minimax_benchmark.md
+
+# Local integration test setups
+postgrest-test/
+
+# GCS notebook snapshots (internal)
+GCS/
+
+# Test caches
+.pytest_cache/
+
+# Empty agent dirs
+.agents/
+
+# IDE-specific ignores
+.cursorignore

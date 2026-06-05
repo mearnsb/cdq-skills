@@ -13,33 +13,8 @@ description: Get recent DQ job run IDs and timestamps. Takes NO arguments — do
 cdq get-recent-runs
 ```
 
-> ⚠️ **NO FLAGS** — this command takes zero arguments. Do not add `--dataset`, `--limit`, or any other flag. Adding any flag will cause an error.
+⚠️ **NO FLAGS** — adding any flag (`--dataset`, `--limit`, etc.) will cause an error.
 
-**Correct vs. incorrect usage:**
-```
-❌ cdq get-recent-runs --dataset "samples.sales_data"   (WRONG — will error)
-❌ cdq get-recent-runs --limit 10                        (WRONG — will error)
-✅ cdq get-recent-runs                                   (correct)
-```
+## Done
 
-**Help output (no flags exist):**
-```
-usage: cdq get-recent-runs [-h]
-
-options:
-  -h, --help  show this help message and exit
-```
-
-## Output
-
-JSON array of recent runs. Key fields per run:
-- `runId` — use this with `cdq get-results --run-id`
-- `dataset` — logical dataset name
-- `runDate` — when the job ran
-- `score` / `passFail` — DQ score and pass/fail status
-
-## Next Step
-
-```bash
-cdq get-results --dataset "MY_DATASET" --run-id "2026-05-14"
-```
+Run the command, report the results, and stop. If the user needs to see results for a specific run, suggest `cdq get-results --dataset "NAME" --run-id "YYYY-MM-DD"`.
