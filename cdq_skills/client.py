@@ -277,7 +277,11 @@ def cmd_run_dq_job(args):
             "connectionName": args.connection or config["cxn"],
         },
         "agentId": {"id": 0},
-        "profile": {"on": True},
+        "profile": {
+            "on": True,
+            "profilePushDown": ["count", "distinct", "mean", "minmax", "quality"],
+            "advancedTier": False,
+        },
     }
 
     reg_result = _api_put("/v3/datasetDefs", reg_data)
