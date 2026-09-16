@@ -15,15 +15,22 @@ cdq list-tables [--schema SCHEMA] [--search PATTERN] [--limit N] [--connection C
 
 ❌ `cdq list-tables --dataset MY_DATASET` — no `--dataset` flag exists.
 
+### Schema discovery and matching
+
+If `--schema` is omitted and `DQ_SCHEMA` is unset, the command lists the connection's top-level schemas/databases instead of failing. Pick the exact, case-sensitive schema name from that response and pass it with `--schema`; `public` and `PUBLIC` can be different schemas.
+
+Schema results and table results include `source: "explorer"` when they come from the DQ Explorer metadata endpoint. The Explorer path retrieves the full table list without the legacy SQL endpoint's approximate 250-row cap. If the connection alias is not accepted by Explorer, the command falls back to the legacy BigQuery `INFORMATION_SCHEMA.TABLES` query and labels the response `source: "sql-fallback"`.
+
 ### Search Pattern Syntax
 
-The `--search` parameter uses **SQL LIKE patterns** with `%` as the wildcard character:
+The `--search` parameter is applied client-side using case-insensitive SQL `LIKE` semantics with `%` as the wildcard and `_` as a single-character wildcard:
 
-- `--search "f%"` finds tables starting with "f" (e.g., `fact_sales`, `files`)
-- `--search "%data"` finds tables ending with "data"
-- `--search "%user%"` finds tables containing "user" anywhere
+- `--search "f%"` finds tables starting with `f`
+- `--search "%data"` finds tables ending with `data`
+- `--search "%user%"` finds tables containing `user` anywhere
+- `--search "user"` is treated as `%user%` (substring match)
 
-*Common mistake:* Using glob patterns like `f*` (with `*`) will not work — always use `%` as the wildcard.
+*Common mistake:* Using glob patterns like `f*` (with `*`) will not work — use `%` for wildcards.
 
 ## Done
 

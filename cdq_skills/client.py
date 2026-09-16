@@ -21,6 +21,7 @@ Usage:
 import argparse
 import json
 import os
+import re
 import sys
 from datetime import datetime
 
@@ -118,81 +119,126 @@ def cmd_run_sql(args):
     _print_json(result)
 
 
+def _like_pattern_to_regex(pattern: str) -> "re.Pattern":
+    """Translate a SQL LIKE pattern (% / _ wildcards) into a compiled, case-insensitive regex.
+
+    A pattern with no wildcards is treated as a substring match (wrapped in %...%),
+    matching the pre-existing --search UX.
+    """
+    if "%" not in pattern and "_" not in pattern:
+        pattern = f"%{pattern}%"
+    regex_parts = [
+        ".*" if part == "%" else "." if part == "_" else re.escape(part)
+        for part in re.split(r"([%_])", pattern)
+    ]
+    return re.compile(f"^{''.join(regex_parts)}$", re.IGNORECASE)
+
+
+def _explorer_search(connection: str, schemasearch: str = "", showstats: bool = False) -> list:
+    """Call the DQ explorer metadata endpoint (/v2/explorer/search).
+
+    schemasearch is an EXACT, case-sensitive match against the schema/database name
+    (despite the "search" name) - not a substring pattern. Leave it blank to list
+    all top-level schemas/databases for the connection.
+    """
+    params = {
+        "alias": connection,
+        "catalogsearch": "",
+        "schemasearch": schemasearch,
+        "tablesearch": "",
+        "showviews": "0",
+        "showstats": "1" if showstats else "0",
+        "eagerfetch": "0",
+    }
+    return _api_get("/v2/explorer/search", params=params)
+
+
+def _list_schemas_via_explorer(connection: str) -> list:
+    rows = _explorer_search(connection)
+    return sorted(row["database"][0] for row in rows if row.get("database"))
+
+
+def _list_tables_via_explorer(connection: str, schema: str) -> list:
+    rows = _explorer_search(connection, schemasearch=schema, showstats=True)
+    if not rows:
+        return []
+    return list(rows[0].get("mappedTables", []))
+
+
+def _list_tables_via_sql(connection: str, schema: str) -> list:
+    """Legacy fallback for connections the explorer endpoint doesn't support.
+
+    BigQuery INFORMATION_SCHEMA dialect only, and the API caps getsqlresult at
+    ~250 rows server-side even with an explicit LIMIT - use _list_tables_via_explorer
+    when available.
+    """
+    sql = (
+        f"SELECT table_name FROM `{schema}.INFORMATION_SCHEMA.TABLES` "
+        "WHERE table_type = 'BASE TABLE' ORDER BY table_name"
+    )
+    params = {"sql": sql, "cxn": connection}
+    result = _api_post("/v2/getsqlresult", payload={}, params=params)
+    tables = []
+    for row in result.get("rows", []):
+        if row:
+            table_name = row[0].get("colValue")
+            if table_name:
+                tables.append(table_name)
+    return tables
+
+
 def cmd_list_tables(args):
-    """List tables in a schema by querying INFORMATION_SCHEMA."""
+    """List tables in a schema via the DQ explorer metadata endpoint.
+
+    Falls back to a legacy SQL INFORMATION_SCHEMA query if the connection alias
+    isn't recognized by the explorer endpoint (e.g. some agent-only connections).
+    """
     config = get_config()
-    schema = args.schema or config.get("schema", "")
     connection = args.connection or config["cxn"]
     limit = args.limit or 20
     search = args.search
+    schema = args.schema or config.get("schema", "")
 
     if not schema:
-        print("Error: --schema is required (or set DQ_SCHEMA in .env)", file=sys.stderr)
-        return 1
+        schemas = _list_schemas_via_explorer(connection)
+        _print_json({
+            "schemas": schemas,
+            "count": len(schemas),
+            "connection": connection,
+            "hint": "Pass one of these exact (case-sensitive) names with --schema to list its tables.",
+        })
+        return 0
 
-    # Build SQL query - BigQuery uses backticks and project.dataset format
-    # PostgreSQL/MySQL use regular quotes
-    # Default to BigQuery-style for now as that's what's been tested
-    sql_parts = [
-        "SELECT table_name FROM",
-    ]
-
-    # BigQuery format: `project.schema.INFORMATION_SCHEMA.TABLES`
-    # Check if schema contains project.dataset format
-    if "." in schema:
-        sql_parts.append(f"`{schema}.INFORMATION_SCHEMA.TABLES`")
-    else:
-        # Assume just dataset, use default project
-        sql_parts.append(f"`{schema}.INFORMATION_SCHEMA.TABLES`")
-
-    sql_parts.append("WHERE table_type = 'BASE TABLE'")
+    try:
+        tables = _list_tables_via_explorer(connection, schema)
+        source = "explorer"
+    except requests.exceptions.HTTPError:
+        tables = _list_tables_via_sql(connection, schema)
+        source = "sql-fallback"
 
     if search:
-        # If user provides explicit wildcards (%, _), use as-is; otherwise wrap with % for substring match
-        if '%' in search or '_' in search:
-            sql_parts.append(f"AND LOWER(table_name) LIKE '{search.lower()}'")
-        else:
-            sql_parts.append(f"AND LOWER(table_name) LIKE '%{search.lower()}%'")
+        pattern = _like_pattern_to_regex(search)
+        tables = [t for t in tables if pattern.match(t)]
 
-    sql_parts.append("ORDER BY table_name")
-    sql_parts.append(f"LIMIT {limit}")
+    tables = sorted(tables)
+    total_matched = len(tables)
+    output_tables = tables[:limit]
 
-    sql = " ".join(sql_parts)
-
-    params = {
-        "sql": sql,
-        "cxn": connection,
+    output = {
+        "tables": output_tables,
+        "count": len(output_tables),
+        "total_matched": total_matched,
+        "schema": schema,
+        "search": search,
+        "limit": limit,
+        "source": source,
     }
-
-    result = _api_post("/v2/getsqlresult", payload={}, params=params)
-
-    # Parse the result - extract table names from the nested format
-    if result.get("rows"):
-        tables = []
-        for row in result["rows"]:
-            if row and len(row) > 0:
-                table_name = row[0].get("colValue")
-                if table_name:
-                    tables.append(table_name)
-
-        output = {
-            "tables": tables,
-            "count": len(tables),
-            "schema": schema,
-            "search": search,
-            "limit": limit,
-        }
-        _print_json(output)
-    else:
-        _print_json({
-            "tables": [],
-            "count": 0,
-            "schema": schema,
-            "search": search,
-            "error": result.get("exception", "No tables found")
-        })
+    if total_matched > limit:
+        output["note"] = f"Showing {limit} of {total_matched} matching tables. Increase --limit to see more."
+    _print_json(output)
 
     return 0
+
 
 
 def _apply_limit(result, limit, item_name="items"):
